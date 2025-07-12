@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Target, Calculator } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Target, Calculator, RefreshCw } from 'lucide-react';
 import { AssetSearch } from './components/AssetSearch';
 import { AssetCard } from './components/AssetCard';
 import { PortfolioSummary } from './components/PortfolioSummary';
@@ -8,10 +8,82 @@ import { Asset } from './types';
 import { calculateOptimalAllocation, validatePortfolio } from './utils/calculations';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
+import { Button } from './components/component-library/button';
+import {
+  savePortfolioToLocalStorage,
+  loadPortfolioFromLocalStorage,
+} from './utils/localStorage';
+import {
+  refreshAssetPrices,
+  hasHitApiLimit,
+  getUserName,
+  getApiUsageInfo,
+  refreshSingleAssetPrice,
+} from './services/eodhd';
 
 function App() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [additionalInvestment, setAdditionalInvestment] = useState<number>(0);
+  const [isRefreshingPrices, setIsRefreshingPrices] = useState(false);
+  const [welcomeMessage, setWelcomeMessage] = useState<string | null>(null);
+  const [isApiLimitReached, setIsApiLimitReached] = useState(false);
+  const [showRefreshApiUsage, setShowRefreshApiUsage] = useState(false);
+  const [refreshApiUsage, setRefreshApiUsage] = useState<{
+    used: number;
+    remaining: number;
+    total: number;
+    isWelcomeBonus: boolean;
+  }>({ used: 0, remaining: 500, total: 500, isWelcomeBonus: true });
+  const [refreshDailyUsage, setRefreshDailyUsage] = useState<{
+    used: number;
+    remaining: number;
+    total: number;
+  } | null>(null);
+
+  const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+
+  // Fetch user name for welcome message
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!useMockData) {
+        try {
+          const [userName, limitReached] = await Promise.all([
+            getUserName(),
+            hasHitApiLimit(),
+          ]);
+
+          if (userName) {
+            setWelcomeMessage(`Hello ${userName}`);
+          }
+
+          setIsApiLimitReached(limitReached);
+        } catch (error) {
+          console.error('Failed to fetch user data:', error);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [useMockData]);
+
+  // Load portfolio from localStorage on component mount
+  useEffect(() => {
+    const { assets: savedAssets, additionalInvestment: savedInvestment } =
+      loadPortfolioFromLocalStorage();
+    if (savedAssets.length > 0) {
+      setAssets(savedAssets);
+    }
+    if (savedInvestment > 0) {
+      setAdditionalInvestment(savedInvestment);
+    }
+  }, []);
+
+  // Save portfolio to localStorage whenever assets or additionalInvestment changes
+  useEffect(() => {
+    if (assets.length > 0 || additionalInvestment > 0) {
+      savePortfolioToLocalStorage(assets, additionalInvestment);
+    }
+  }, [assets, additionalInvestment]);
 
   const handleAddAsset = (asset: Asset) => {
     setAssets(prev => [...prev, asset]);
@@ -37,6 +109,47 @@ function App() {
     );
   };
 
+  const handleRefreshSingle = async (asset: Asset) => {
+    try {
+      const updatedAsset = await refreshSingleAssetPrice(asset);
+      setAssets(prev => prev.map(a => (a.symbol === asset.symbol ? updatedAsset : a)));
+
+      // Get updated API usage info after single refresh
+      const apiInfo = await getApiUsageInfo();
+      setIsApiLimitReached(apiInfo.limitReached);
+    } catch (error) {
+      console.error('Failed to refresh single asset:', error);
+      throw error;
+    }
+  };
+
+  const handleRefreshPrices = async () => {
+    if (isApiLimitReached || assets.length === 0) {
+      return;
+    }
+
+    setIsRefreshingPrices(true);
+    setShowRefreshApiUsage(false); // Hide previous message
+
+    try {
+      const refreshedAssets = await refreshAssetPrices(assets);
+      setAssets(refreshedAssets);
+
+      // Get updated API usage info after refresh
+      const apiInfo = await getApiUsageInfo();
+      setRefreshApiUsage(apiInfo.usage);
+      if (apiInfo.dailyUsage) {
+        setRefreshDailyUsage(apiInfo.dailyUsage);
+      }
+      setIsApiLimitReached(apiInfo.limitReached);
+      setShowRefreshApiUsage(true); // Show updated API usage
+    } catch (error) {
+      console.error('Failed to refresh prices:', error);
+    } finally {
+      setIsRefreshingPrices(false);
+    }
+  };
+
   const existingSymbols = assets.map(asset => asset.symbol);
   const isValidPortfolio = validatePortfolio(assets);
   const hasAssets = assets.length > 0;
@@ -57,6 +170,18 @@ function App() {
       {/* Main Content */}
       <main className="flex-grow flex items-center justify-center">
         <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+          {/* Welcome Message */}
+          {welcomeMessage && (
+            <div className="mb-8 text-center">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {welcomeMessage}! 👋
+              </h1>
+              <p className="text-lg text-gray-600">
+                Welcome back to your portfolio management dashboard
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - Asset Management */}
             <div className="lg:col-span-2 space-y-8">
@@ -67,19 +192,62 @@ function App() {
 
               {hasAssets && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-orange-100 rounded-lg">
-                      <Target className="h-5 w-5 text-orange-600" />
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-orange-100 rounded-lg">
+                        <Target className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold text-gray-900">
+                          Your Portfolio Assets
+                        </h2>
+                        <p className="text-sm text-gray-600">
+                          Set target allocations and current values
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900">
-                        Your Portfolio Assets
-                      </h2>
-                      <p className="text-sm text-gray-600">
-                        Set target allocations and current values
-                      </p>
-                    </div>
+                    <Button
+                      onClick={handleRefreshPrices}
+                      disabled={isRefreshingPrices || isApiLimitReached}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2">
+                      <RefreshCw
+                        className={`h-4 w-4 ${isRefreshingPrices ? 'animate-spin' : ''}`}
+                      />
+                      {isRefreshingPrices ? 'Refreshing...' : 'Refresh Prices'}
+                    </Button>
                   </div>
+
+                  {/* Refresh API Usage Info */}
+                  {showRefreshApiUsage && !useMockData && (
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm text-blue-800">
+                          <strong>Price Refresh Complete!</strong>
+                          <div className="mt-1 space-y-1">
+                            <div>
+                              Welcome bonus: {refreshApiUsage.used}/
+                              {refreshApiUsage.total} requests used •{' '}
+                              {refreshApiUsage.remaining} remaining
+                            </div>
+                            {refreshDailyUsage && (
+                              <div>
+                                Daily usage: {refreshDailyUsage.used}/
+                                {refreshDailyUsage.total} requests used •{' '}
+                                {refreshDailyUsage.remaining} remaining
+                              </div>
+                            )}
+                            <div className="text-gray-600">
+                              Updated {assets.length} asset
+                              {assets.length !== 1 ? 's' : ''}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {assets.map(asset => (
                       <AssetCard
@@ -88,6 +256,7 @@ function App() {
                         onUpdateAllocation={handleUpdateAllocation}
                         onUpdateCurrentValue={handleUpdateCurrentValue}
                         onRemoveAsset={handleRemoveAsset}
+                        onRefreshSingle={handleRefreshSingle}
                       />
                     ))}
                   </div>
@@ -96,7 +265,7 @@ function App() {
             </div>
 
             {/* Right Column - Summary and Results */}
-            <div className="space-y-8">
+            <div className="space-y-8 lg:sticky lg:top-4 lg:self-start">
               {hasAssets && (
                 <PortfolioSummary
                   assets={assets}

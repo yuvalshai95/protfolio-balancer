@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, TrendingUp, Loader2 } from 'lucide-react';
+import { Plus, TrendingUp, Loader2, AlertCircle, Search } from 'lucide-react';
 import { Asset } from '@/types';
 import {
   Card,
@@ -12,29 +12,71 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from '@/components/component-library/command';
 import { Button } from '@/components/component-library/button';
+import { Input } from '@/components/component-library/input';
+import { Alert, AlertDescription } from '@/components/component-library/alert';
+import {
+  searchAssets,
+  getRealtimePrice,
+  getApiUsageInfo,
+  EodhdSearchItem,
+} from '@/services/eodhd';
+import { formatPrice } from '@/utils/formatting';
 
 interface AssetSearchProps {
   onAddAsset: (asset: Asset) => void;
   existingSymbols: string[];
 }
 
-// Mock data for demonstration - in production, this would come from a financial API
-const mockAssets = [
-  { symbol: 'AAPL', name: 'Apple Inc.', price: 195.89 },
-  { symbol: 'MSFT', name: 'Microsoft Corporation', price: 420.55 },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 142.56 },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 146.09 },
-  { symbol: 'TSLA', name: 'Tesla Inc.', price: 248.5 },
-  { symbol: 'NVDA', name: 'NVIDIA Corporation', price: 875.28 },
-  { symbol: 'SPY', name: 'SPDR S&P 500 ETF Trust', price: 445.2 },
-  { symbol: 'QQQ', name: 'Invesco QQQ Trust', price: 385.67 },
-  { symbol: 'VTI', name: 'Vanguard Total Stock Market ETF', price: 245.78 },
-  { symbol: 'BND', name: 'Vanguard Total Bond Market ETF', price: 75.45 },
+// Mock data for development if VITE_USE_MOCK_DATA is true (TA exchange only)
+const mockSearchResults: EodhdSearchItem[] = [
+  {
+    Code: 'ISFF702',
+    Exchange: 'TA',
+    Name: 'iShares Core S&P 500 UCITS ETF USD (Acc)',
+    Type: 'ETF',
+    Country: 'IL',
+    Currency: 'ILS',
+    ISIN: 'IE00B5BMR087',
+    previousClose: 22120, // Will be converted to 221.20 NIS
+    previousCloseDate: '2023-10-26',
+  },
+  {
+    Code: 'OSFF701',
+    Exchange: 'TA',
+    Name: 'iShares S&P 500 UCITS ETF',
+    Type: 'ETF',
+    Country: 'IL',
+    Currency: 'ILS',
+    ISIN: 'IE00B5BMR087',
+    previousClose: 15654, // Will be converted to 156.54 NIS
+    previousCloseDate: '2023-10-26',
+  },
+  {
+    Code: 'TEVA',
+    Exchange: 'TA',
+    Name: 'Teva Pharmaceutical Industries Ltd',
+    Type: 'Common Stock',
+    Country: 'IL',
+    Currency: 'ILS',
+    ISIN: 'IL0002315271',
+    previousClose: 3545, // Will be converted to 35.45 NIS
+    previousCloseDate: '2023-10-26',
+  },
+  {
+    Code: 'CHKP',
+    Exchange: 'TA',
+    Name: 'Check Point Software Technologies Ltd',
+    Type: 'Common Stock',
+    Country: 'IL',
+    Currency: 'ILS',
+    ISIN: 'IL0010824113',
+    previousClose: 18965, // Will be converted to 189.65 NIS
+    previousCloseDate: '2023-10-26',
+  },
 ];
 
 export const AssetSearch: React.FC<AssetSearchProps> = ({
@@ -43,46 +85,158 @@ export const AssetSearch: React.FC<AssetSearchProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<typeof mockAssets>([]);
+  const [searchResults, setSearchResults] = useState<EodhdSearchItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [showApiUsageInfo, setShowApiUsageInfo] = useState(false);
 
-  useEffect(() => {
-    if (searchTerm.length > 0) {
-      setIsOpen(true);
-      setIsSearching(true);
-      // Simulate API delay
-      const timer = setTimeout(() => {
-        const results = mockAssets
-          .filter(
-            asset =>
-              asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              asset.name.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-          .filter(asset => !existingSymbols.includes(asset.symbol));
-        setSearchResults(results);
-        setIsSearching(false);
-      }, 300);
-      return () => clearTimeout(timer);
-    } else {
-      setSearchResults([]);
-      setIsOpen(false);
+  // API usage state
+  const [apiUsage, setApiUsage] = useState<{
+    used: number;
+    remaining: number;
+    total: number;
+    isWelcomeBonus: boolean;
+  }>({ used: 0, remaining: 500, total: 500, isWelcomeBonus: true });
+  const [dailyUsage, setDailyUsage] = useState<{
+    used: number;
+    remaining: number;
+    total: number;
+  } | null>(null);
+  const [isApiLimitReached, setIsApiLimitReached] = useState(false);
+  const [isNearLimit, setIsNearLimit] = useState(false);
+  const [isLoadingApiUsage, setIsLoadingApiUsage] = useState(false);
+
+  const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+
+  // Fetch API usage data
+  const fetchApiUsageData = async () => {
+    setIsLoadingApiUsage(true);
+    try {
+      const apiInfo = await getApiUsageInfo();
+
+      setApiUsage(apiInfo.usage);
+      if (apiInfo.dailyUsage) {
+        setDailyUsage(apiInfo.dailyUsage);
+      }
+      setIsApiLimitReached(apiInfo.limitReached);
+      setIsNearLimit(apiInfo.nearLimit);
+    } catch (error) {
+      console.error('Failed to fetch API usage data:', error);
+    } finally {
+      setIsLoadingApiUsage(false);
     }
-  }, [searchTerm, existingSymbols]);
-
-  const handleAddAsset = (asset: (typeof mockAssets)[0]) => {
-    const newAsset: Asset = {
-      symbol: asset.symbol,
-      name: asset.name,
-      price: asset.price,
-      targetAllocation: 0,
-      currentValue: 0,
-    };
-    onAddAsset(newAsset);
-    setSearchTerm('');
   };
 
-  const handleSelectAsset = (asset: (typeof mockAssets)[0]) => {
-    handleAddAsset(asset);
+  // Refresh API usage data only (without user name)
+  const refreshApiUsageData = async () => {
+    setIsLoadingApiUsage(true);
+    try {
+      const apiInfo = await getApiUsageInfo();
+
+      setApiUsage(apiInfo.usage);
+      if (apiInfo.dailyUsage) {
+        setDailyUsage(apiInfo.dailyUsage);
+      }
+      setIsApiLimitReached(apiInfo.limitReached);
+      setIsNearLimit(apiInfo.nearLimit);
+    } catch (error) {
+      console.error('Failed to refresh API usage data:', error);
+    } finally {
+      setIsLoadingApiUsage(false);
+    }
+  };
+
+  // Fetch API usage on component mount (only once)
+  useEffect(() => {
+    if (!useMockData) {
+      fetchApiUsageData();
+    }
+  }, [useMockData]);
+
+  const handleSearch = async () => {
+    if (searchTerm.length === 0) {
+      return;
+    }
+
+    setIsOpen(true);
+    setIsSearching(true);
+    setApiError(null);
+    setShowApiUsageInfo(false);
+
+    try {
+      let results: EodhdSearchItem[];
+      if (useMockData) {
+        // Simulate API delay and filter mock data
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const filteredResults = mockSearchResults.filter(
+          asset =>
+            asset.Code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            asset.Name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (asset.ISIN && asset.ISIN.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        // Apply price conversion for TA exchange (same as real API)
+        results = filteredResults.map(asset => ({
+          ...asset,
+          previousClose:
+            asset.Exchange === 'TA' ? asset.previousClose / 100 : asset.previousClose,
+        }));
+      } else {
+        results = await searchAssets(searchTerm);
+      }
+
+      // Don't filter out existing assets - show them but mark them as existing
+      setSearchResults(results);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to fetch assets. Please try again later.';
+      setApiError(errorMessage);
+      console.error(error);
+    } finally {
+      setIsSearching(false);
+      // Show API usage info after search completion (only for real API calls)
+      if (!useMockData) {
+        setShowApiUsageInfo(true);
+        // Refresh API usage data after search (without refetching user name)
+        refreshApiUsageData();
+      }
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const handleSelectAsset = async (asset: EodhdSearchItem) => {
+    setSearchTerm('');
+    setIsOpen(false);
+    setShowApiUsageInfo(false); // Clear API usage info when selecting an asset
+
+    // Optional: Show a loading state on the asset card itself
+    try {
+      let newAsset: Asset;
+      if (useMockData) {
+        newAsset = {
+          symbol: asset.Code,
+          name: asset.Name,
+          price:
+            asset.Exchange === 'TA' ? asset.previousClose / 100 : asset.previousClose,
+          targetAllocation: 0,
+          currentValue: 0,
+          exchange: asset.Exchange,
+          lastUpdated: Date.now(),
+        };
+      } else {
+        newAsset = await getRealtimePrice(asset.Code, asset.Exchange, asset.Name);
+      }
+      onAddAsset(newAsset);
+    } catch (error) {
+      setApiError(`Could not fetch real-time price for ${asset.Code}.`);
+      console.error(error);
+    }
   };
 
   return (
@@ -101,68 +255,165 @@ export const AssetSearch: React.FC<AssetSearchProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <Command shouldFilter={false} className="overflow-visible">
-          <div className="relative">
-            <CommandInput
+        {isApiLimitReached && !useMockData && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              API quota has been exceeded for today. Please try again tomorrow.
+            </AlertDescription>
+          </Alert>
+        )}
+        {isNearLimit && !isApiLimitReached && !useMockData && (
+          <Alert variant="default" className="mb-4 border-orange-200 bg-orange-50">
+            <AlertCircle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              API usage: {apiUsage.used}/{apiUsage.total} requests used{' '}
+              {apiUsage.isWelcomeBonus ? 'from welcome bonus' : 'today'}.
+              {apiUsage.remaining > 0
+                ? ` ${apiUsage.remaining} remaining.`
+                : ' Limit reached.'}
+            </AlertDescription>
+          </Alert>
+        )}
+        <div className="flex gap-2 mb-4">
+          <div className="flex-1">
+            <Input
               value={searchTerm}
-              onValueChange={setSearchTerm}
-              placeholder="Search stocks or ETFs (e.g., AAPL, SPY, Microsoft)"
-              className="pl-10"
+              onChange={e => setSearchTerm(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Search by name, symbol, or ISIN (e.g., AAPL, iShares Core S&P 500, IE00B5BMR087)"
+              disabled={isApiLimitReached && !useMockData}
             />
-            {isOpen && (
-              <div className="absolute top-full w-full left-0 z-10 mt-2">
-                <div className="rounded-md border bg-popover text-popover-foreground shadow-lg">
-                  <CommandList>
-                    {isSearching ? (
-                      <div className="p-4 flex items-center justify-center text-sm">
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Searching...
-                      </div>
-                    ) : (
-                      <>
-                        <CommandEmpty>
-                          No assets found matching "{searchTerm}"
-                        </CommandEmpty>
-                        <CommandGroup>
-                          {searchResults.map(asset => (
-                            <CommandItem
-                              key={asset.symbol}
-                              value={asset.symbol}
-                              onSelect={() => handleSelectAsset(asset)}
-                              className="flex items-center justify-between">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-3">
-                                  <div className="font-semibold text-gray-900">
-                                    {asset.symbol}
-                                  </div>
-                                  <div className="text-sm text-gray-600 truncate">
-                                    {asset.name}
-                                  </div>
-                                </div>
-                                <div className="text-sm font-medium text-green-600">
-                                  ${asset.price.toFixed(2)}
-                                </div>
-                              </div>
-                              <Button
-                                size="sm"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  handleAddAsset(asset);
-                                }}>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add
-                              </Button>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </>
-                    )}
-                  </CommandList>
-                </div>
-              </div>
-            )}
           </div>
-        </Command>
+          <Button
+            onClick={handleSearch}
+            disabled={isSearching || isApiLimitReached || searchTerm.length === 0}
+            className="flex items-center gap-2">
+            {isSearching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+            {isSearching ? 'Searching...' : 'Search'}
+          </Button>
+        </div>
+
+        {showApiUsageInfo && !useMockData && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-blue-800">
+                {isLoadingApiUsage ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Updating API usage...</span>
+                  </div>
+                ) : (
+                  <>
+                    <strong>API Usage:</strong>
+                    <div className="mt-1 space-y-1">
+                      <div>
+                        Welcome bonus: {apiUsage.used}/{apiUsage.total} requests used •{' '}
+                        {apiUsage.remaining} remaining
+                      </div>
+                      {dailyUsage && (
+                        <div>
+                          Daily usage: {dailyUsage.used}/{dailyUsage.total} requests used
+                          • {dailyUsage.remaining} remaining
+                        </div>
+                      )}
+                      {apiUsage.isWelcomeBonus && apiUsage.remaining <= 50 && (
+                        <div className="text-orange-600">
+                          Close to switching to daily limits (20/day)
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isOpen && (
+          <div className="rounded-md border bg-popover text-popover-foreground shadow-lg">
+            <Command shouldFilter={false}>
+              <CommandList>
+                {isSearching ? (
+                  <div className="p-4 flex items-center justify-center text-sm">
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Searching...
+                  </div>
+                ) : (
+                  <>
+                    <CommandEmpty>
+                      {apiError ? apiError : `No assets found matching "${searchTerm}"`}
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {searchResults.map(asset => {
+                        const isExisting = existingSymbols.includes(asset.Code);
+                        return (
+                          <CommandItem
+                            key={asset.ISIN || asset.Code}
+                            value={`${asset.Code} - ${asset.Name}`}
+                            onSelect={() => !isExisting && handleSelectAsset(asset)}
+                            className={`flex items-center justify-between ${
+                              isExisting ? 'opacity-60 cursor-not-allowed' : ''
+                            }`}>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3">
+                                <div className="font-semibold text-gray-900">
+                                  {asset.Code}
+                                </div>
+                                <div className="text-sm text-gray-600 truncate">
+                                  {asset.Name}
+                                </div>
+                                {isExisting && (
+                                  <div className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                                    Already in portfolio
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <span>
+                                  {formatPrice(asset.previousClose, asset.Exchange)}{' '}
+                                  (Previous Close)
+                                </span>
+                                {asset.ISIN && (
+                                  <>
+                                    <span>•</span>
+                                    <span>ISIN: {asset.ISIN}</span>
+                                  </>
+                                )}
+                                {asset.Exchange && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{asset.Exchange}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              disabled={isExisting}
+                              onClick={e => {
+                                e.stopPropagation();
+                                if (!isExisting) {
+                                  handleSelectAsset(asset);
+                                }
+                              }}>
+                              <Plus className="h-4 w-4 mr-2" />
+                              {isExisting ? 'Added' : 'Add'}
+                            </Button>
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </>
+                )}
+              </CommandList>
+            </Command>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

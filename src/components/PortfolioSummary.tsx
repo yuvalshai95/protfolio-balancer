@@ -10,6 +10,7 @@ import {
 } from '@/components/component-library/card';
 import { Input } from '@/components/component-library/input';
 import { Label } from '@/components/component-library/label';
+import { formatNumber } from '@/utils/formatting';
 
 interface PortfolioSummaryProps {
   assets: Asset[];
@@ -55,7 +56,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-900">
-                ${totalCurrentValue.toFixed(2)}
+                ${formatNumber(totalCurrentValue)}
               </div>
             </CardContent>
           </Card>
