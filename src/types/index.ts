@@ -4,6 +4,8 @@ export interface Asset {
   price: number;
   targetAllocation: number;
   currentValue: number;
+  exchange?: string; // Optional for backward compatibility
+  lastUpdated?: number; // Timestamp when price was last updated
 }
 
 export interface PortfolioData {
