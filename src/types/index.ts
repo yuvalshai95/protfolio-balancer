@@ -15,9 +15,12 @@ export interface PortfolioData {
 export interface AllocationResult {
   symbol: string;
   name: string;
-  currentValue: number;
-  targetValue: number;
-  recommendedInvestment: number;
-  shares: number;
   price: number;
+  currentValue: number;
+  targetAllocation: number;
+  investmentAmount: number;
+  shares: number;
+  newValue: number;
+  newPortfolioPercentage: number;
+  newDifferenceFromTarget: number;
 }
