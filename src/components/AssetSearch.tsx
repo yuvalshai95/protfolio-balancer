@@ -130,7 +130,7 @@ export const AssetSearch: React.FC<AssetSearchProps> = ({
                               value={asset.symbol}
                               onSelect={() => handleSelectAsset(asset)}
                               className="flex items-center justify-between">
-                              <div className="flex-1">
+                              <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-3">
                                   <div className="font-semibold text-gray-900">
                                     {asset.symbol}
