@@ -1,6 +1,22 @@
-import React, { useState } from 'react';
-import { Search, Plus, TrendingUp } from 'lucide-react';
-import { Asset } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Plus, TrendingUp, Loader2 } from 'lucide-react';
+import { Asset } from '@/types';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/component-library/card';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/component-library/command';
+import { Button } from '@/components/component-library/button';
 
 interface AssetSearchProps {
   onAddAsset: (asset: Asset) => void;
@@ -13,39 +29,47 @@ const mockAssets = [
   { symbol: 'MSFT', name: 'Microsoft Corporation', price: 420.55 },
   { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 142.56 },
   { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 146.09 },
-  { symbol: 'TSLA', name: 'Tesla Inc.', price: 248.50 },
+  { symbol: 'TSLA', name: 'Tesla Inc.', price: 248.5 },
   { symbol: 'NVDA', name: 'NVIDIA Corporation', price: 875.28 },
-  { symbol: 'SPY', name: 'SPDR S&P 500 ETF Trust', price: 445.20 },
+  { symbol: 'SPY', name: 'SPDR S&P 500 ETF Trust', price: 445.2 },
   { symbol: 'QQQ', name: 'Invesco QQQ Trust', price: 385.67 },
   { symbol: 'VTI', name: 'Vanguard Total Stock Market ETF', price: 245.78 },
   { symbol: 'BND', name: 'Vanguard Total Bond Market ETF', price: 75.45 },
 ];
 
-export const AssetSearch: React.FC<AssetSearchProps> = ({ onAddAsset, existingSymbols }) => {
+export const AssetSearch: React.FC<AssetSearchProps> = ({
+  onAddAsset,
+  existingSymbols,
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<typeof mockAssets>([]);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-    if (term.length > 0) {
+  useEffect(() => {
+    if (searchTerm.length > 0) {
+      setIsOpen(true);
       setIsSearching(true);
       // Simulate API delay
-      setTimeout(() => {
-        const results = mockAssets.filter(
-          asset => 
-            asset.symbol.toLowerCase().includes(term.toLowerCase()) ||
-            asset.name.toLowerCase().includes(term.toLowerCase())
-        ).filter(asset => !existingSymbols.includes(asset.symbol));
+      const timer = setTimeout(() => {
+        const results = mockAssets
+          .filter(
+            asset =>
+              asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              asset.name.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+          .filter(asset => !existingSymbols.includes(asset.symbol));
         setSearchResults(results);
         setIsSearching(false);
       }, 300);
+      return () => clearTimeout(timer);
     } else {
       setSearchResults([]);
+      setIsOpen(false);
     }
-  };
+  }, [searchTerm, existingSymbols]);
 
-  const handleAddAsset = (asset: typeof mockAssets[0]) => {
+  const handleAddAsset = (asset: (typeof mockAssets)[0]) => {
     const newAsset: Asset = {
       symbol: asset.symbol,
       name: asset.name,
@@ -55,74 +79,91 @@ export const AssetSearch: React.FC<AssetSearchProps> = ({ onAddAsset, existingSy
     };
     onAddAsset(newAsset);
     setSearchTerm('');
-    setSearchResults([]);
+  };
+
+  const handleSelectAsset = (asset: (typeof mockAssets)[0]) => {
+    handleAddAsset(asset);
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-blue-100 rounded-lg">
-          <TrendingUp className="h-5 w-5 text-blue-600" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Add Assets</h2>
-          <p className="text-sm text-gray-600">Search for stocks and ETFs to add to your portfolio</p>
-        </div>
-      </div>
-      
-      <div className="relative">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search stocks or ETFs (e.g., AAPL, SPY, Microsoft)"
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-          />
-        </div>
-        
-        {isSearching && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <span className="ml-2 text-gray-600">Searching...</span>
-            </div>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <TrendingUp className="h-5 w-5 text-blue-600" />
           </div>
-        )}
-        
-        {searchResults.length > 0 && !isSearching && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
-            {searchResults.map((asset) => (
-              <div
-                key={asset.symbol}
-                className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <div className="font-semibold text-gray-900">{asset.symbol}</div>
-                    <div className="text-sm text-gray-600 truncate">{asset.name}</div>
-                  </div>
-                  <div className="text-sm font-medium text-green-600">${asset.price.toFixed(2)}</div>
+          <div>
+            <CardTitle>Add Assets</CardTitle>
+            <CardDescription>
+              Search for stocks and ETFs to add to your portfolio
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Command shouldFilter={false} className="overflow-visible">
+          <div className="relative">
+            <CommandInput
+              value={searchTerm}
+              onValueChange={setSearchTerm}
+              placeholder="Search stocks or ETFs (e.g., AAPL, SPY, Microsoft)"
+              className="pl-10"
+            />
+            {isOpen && (
+              <div className="absolute top-full w-full left-0 z-10 mt-2">
+                <div className="rounded-md border bg-popover text-popover-foreground shadow-lg">
+                  <CommandList>
+                    {isSearching ? (
+                      <div className="p-4 flex items-center justify-center text-sm">
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Searching...
+                      </div>
+                    ) : (
+                      <>
+                        <CommandEmpty>
+                          No assets found matching "{searchTerm}"
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {searchResults.map(asset => (
+                            <CommandItem
+                              key={asset.symbol}
+                              value={asset.symbol}
+                              onSelect={() => handleSelectAsset(asset)}
+                              className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3">
+                                  <div className="font-semibold text-gray-900">
+                                    {asset.symbol}
+                                  </div>
+                                  <div className="text-sm text-gray-600 truncate">
+                                    {asset.name}
+                                  </div>
+                                </div>
+                                <div className="text-sm font-medium text-green-600">
+                                  ${asset.price.toFixed(2)}
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleAddAsset(asset);
+                                }}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add
+                              </Button>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </>
+                    )}
+                  </CommandList>
                 </div>
-                <button
-                  onClick={() => handleAddAsset(asset)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add
-                </button>
               </div>
-            ))}
+            )}
           </div>
-        )}
-        
-        {searchTerm && searchResults.length === 0 && !isSearching && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4">
-            <p className="text-gray-600 text-center">No assets found matching "{searchTerm}"</p>
-          </div>
-        )}
-      </div>
-    </div>
+        </Command>
+      </CardContent>
+    </Card>
   );
 };
