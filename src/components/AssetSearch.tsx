@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, TrendingUp, Loader2, AlertCircle, Search } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, TrendingUp, Loader2, AlertCircle, Search, X } from 'lucide-react';
 import { Asset } from '@/types';
 import {
   Card,
@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/component-library/button';
 import { Input } from '@/components/component-library/input';
 import { Alert, AlertDescription } from '@/components/component-library/alert';
+import { Badge } from '@/components/component-library/badge';
 import {
   searchAssets,
   getRealtimePrice,
@@ -31,7 +32,7 @@ interface AssetSearchProps {
   existingSymbols: string[];
 }
 
-// Mock data for development if VITE_USE_MOCK_DATA is true (TA exchange only)
+// Mock data for development if VITE_USE_MOCK_DATA is true
 const mockSearchResults: EodhdSearchItem[] = [
   {
     Code: 'ISFF702',
@@ -77,6 +78,40 @@ const mockSearchResults: EodhdSearchItem[] = [
     previousClose: 18965, // Will be converted to 189.65 NIS
     previousCloseDate: '2023-10-26',
   },
+  // Non-TA examples for testing
+  {
+    Code: 'AAPL',
+    Exchange: 'US',
+    Name: 'Apple Inc',
+    Type: 'Common Stock',
+    Country: 'US',
+    Currency: 'USD',
+    ISIN: 'US0378331005',
+    previousClose: 189.95,
+    previousCloseDate: '2023-10-26',
+  },
+  {
+    Code: 'MSFT',
+    Exchange: 'US',
+    Name: 'Microsoft Corporation',
+    Type: 'Common Stock',
+    Country: 'US',
+    Currency: 'USD',
+    ISIN: 'US5949181045',
+    previousClose: 338.11,
+    previousCloseDate: '2023-10-26',
+  },
+  {
+    Code: 'ASML',
+    Exchange: 'AS',
+    Name: 'ASML Holding NV',
+    Type: 'Common Stock',
+    Country: 'NL',
+    Currency: 'EUR',
+    ISIN: 'NL0010273215',
+    previousClose: 628.4,
+    previousCloseDate: '2023-10-26',
+  },
 ];
 
 export const AssetSearch: React.FC<AssetSearchProps> = ({
@@ -107,6 +142,24 @@ export const AssetSearch: React.FC<AssetSearchProps> = ({
   const [isLoadingApiUsage, setIsLoadingApiUsage] = useState(false);
 
   const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Handle outside click to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   // Fetch API usage data
   const fetchApiUsageData = async () => {
@@ -175,11 +228,17 @@ export const AssetSearch: React.FC<AssetSearchProps> = ({
             (asset.ISIN && asset.ISIN.toLowerCase().includes(searchTerm.toLowerCase()))
         );
         // Apply price conversion for TA exchange (same as real API)
-        results = filteredResults.map(asset => ({
+        const convertedResults = filteredResults.map(asset => ({
           ...asset,
           previousClose:
             asset.Exchange === 'TA' ? asset.previousClose / 100 : asset.previousClose,
         }));
+        // Sort with TA exchange first, then alphabetically (same as real API)
+        results = convertedResults.sort((a, b) => {
+          if (a.Exchange === 'TA' && b.Exchange !== 'TA') return -1;
+          if (a.Exchange !== 'TA' && b.Exchange === 'TA') return 1;
+          return a.Name.localeCompare(b.Name);
+        });
       } else {
         results = await searchAssets(searchTerm);
       }
@@ -275,33 +334,10 @@ export const AssetSearch: React.FC<AssetSearchProps> = ({
             </AlertDescription>
           </Alert>
         )}
-        <div className="flex gap-2 mb-4">
-          <div className="flex-1">
-            <Input
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Search by name, symbol, or ISIN (e.g., AAPL, iShares Core S&P 500, IE00B5BMR087)"
-              disabled={isApiLimitReached && !useMockData}
-            />
-          </div>
-          <Button
-            onClick={handleSearch}
-            disabled={isSearching || isApiLimitReached || searchTerm.length === 0}
-            className="flex items-center gap-2">
-            {isSearching ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Search className="h-4 w-4" />
-            )}
-            {isSearching ? 'Searching...' : 'Search'}
-          </Button>
-        </div>
-
         {showApiUsageInfo && !useMockData && (
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center gap-2">
-              <div className="text-sm text-blue-800">
+            <div className="flex items-start justify-between gap-2">
+              <div className="text-sm text-blue-800 flex-1">
                 {isLoadingApiUsage ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -330,90 +366,139 @@ export const AssetSearch: React.FC<AssetSearchProps> = ({
                   </>
                 )}
               </div>
+              <button
+                onClick={() => setShowApiUsageInfo(false)}
+                className="text-blue-600 hover:text-blue-800 p-1">
+                <X className="h-4 w-4" />
+              </button>
             </div>
           </div>
         )}
-
-        {isOpen && (
-          <div className="rounded-md border bg-popover text-popover-foreground shadow-lg">
-            <Command shouldFilter={false}>
-              <CommandList>
-                {isSearching ? (
-                  <div className="p-4 flex items-center justify-center text-sm">
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Searching...
-                  </div>
-                ) : (
-                  <>
-                    <CommandEmpty>
-                      {apiError ? apiError : `No assets found matching "${searchTerm}"`}
-                    </CommandEmpty>
-                    <CommandGroup>
-                      {searchResults.map(asset => {
-                        const isExisting = existingSymbols.includes(asset.Code);
-                        return (
-                          <CommandItem
-                            key={asset.ISIN || asset.Code}
-                            value={`${asset.Code} - ${asset.Name}`}
-                            onSelect={() => !isExisting && handleSelectAsset(asset)}
-                            className={`flex items-center justify-between ${
-                              isExisting ? 'opacity-60 cursor-not-allowed' : ''
-                            }`}>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3">
-                                <div className="font-semibold text-gray-900">
-                                  {asset.Code}
-                                </div>
-                                <div className="text-sm text-gray-600 truncate">
-                                  {asset.Name}
-                                </div>
-                                {isExisting && (
-                                  <div className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
-                                    Already in portfolio
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <span>
-                                  {formatPrice(asset.previousClose, asset.Exchange)}{' '}
-                                  (Previous Close)
-                                </span>
-                                {asset.ISIN && (
-                                  <>
-                                    <span>•</span>
-                                    <span>ISIN: {asset.ISIN}</span>
-                                  </>
-                                )}
-                                {asset.Exchange && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{asset.Exchange}</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                            <Button
-                              size="sm"
-                              disabled={isExisting}
-                              onClick={e => {
-                                e.stopPropagation();
-                                if (!isExisting) {
-                                  handleSelectAsset(asset);
-                                }
-                              }}>
-                              <Plus className="h-4 w-4 mr-2" />
-                              {isExisting ? 'Added' : 'Add'}
-                            </Button>
-                          </CommandItem>
-                        );
-                      })}
-                    </CommandGroup>
-                  </>
-                )}
-              </CommandList>
-            </Command>
+        <div className="relative mb-4">
+          <div className="flex gap-2 mb-2">
+            <div className="flex-1 relative">
+              <Input
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Search by name, symbol, or ISIN (e.g., AAPL, iShares Core S&P 500, IE00B5BMR087)"
+                disabled={isApiLimitReached && !useMockData}
+                className={searchTerm.length > 0 ? 'pr-10' : ''}
+              />
+              {searchTerm.length > 0 && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Button
+              onClick={handleSearch}
+              disabled={isSearching || isApiLimitReached || searchTerm.length === 0}
+              className="flex items-center gap-2">
+              {isSearching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+              {isSearching ? 'Searching...' : 'Search'}
+            </Button>
           </div>
-        )}
+
+          {isOpen && (
+            <div
+              ref={dropdownRef}
+              className="absolute top-full left-0 right-0 z-50 rounded-md border bg-popover text-popover-foreground shadow-lg">
+              <Command shouldFilter={false}>
+                <CommandList>
+                  {isSearching ? (
+                    <div className="p-4 flex items-center justify-center text-sm">
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Searching...
+                    </div>
+                  ) : (
+                    <>
+                      <CommandEmpty>
+                        {apiError ? apiError : `No assets found matching "${searchTerm}"`}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {searchResults.map(asset => {
+                          const isExisting = existingSymbols.includes(asset.Code);
+                          const isTaExchange = asset.Exchange === 'TA';
+                          return (
+                            <CommandItem
+                              key={asset.ISIN || asset.Code}
+                              value={`${asset.Code} - ${asset.Name}`}
+                              onSelect={() => !isExisting && handleSelectAsset(asset)}
+                              className={`flex items-center justify-between ${
+                                isExisting ? 'opacity-60 cursor-not-allowed' : ''
+                              }`}>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-3">
+                                  <div className="font-semibold text-gray-900">
+                                    {asset.Code}
+                                  </div>
+                                  <div className="text-sm text-gray-600 truncate">
+                                    {asset.Name}
+                                  </div>
+                                  {isTaExchange && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="!px-1.5 !py-0 !text-[10px] bg-blue-500 text-white border-0 hover:bg-blue-500">
+                                      TA Exchange
+                                    </Badge>
+                                  )}
+                                  {isExisting && (
+                                    <Badge
+                                      variant="outline"
+                                      className="!px-1.5 !py-0 !text-[10px] bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-100">
+                                      Already in portfolio
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <span>
+                                    {formatPrice(asset.previousClose, asset.Exchange)}{' '}
+                                    (Previous Close)
+                                  </span>
+                                  {asset.ISIN && (
+                                    <>
+                                      <span>•</span>
+                                      <span>ISIN: {asset.ISIN}</span>
+                                    </>
+                                  )}
+                                  {asset.Exchange && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{asset.Exchange}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                disabled={isExisting}
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  if (!isExisting) {
+                                    handleSelectAsset(asset);
+                                  }
+                                }}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                {isExisting ? 'Added' : 'Add'}
+                              </Button>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </>
+                  )}
+                </CommandList>
+              </Command>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

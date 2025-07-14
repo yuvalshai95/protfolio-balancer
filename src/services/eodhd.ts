@@ -368,17 +368,23 @@ export const searchAssets = async (query: string): Promise<EodhdSearchItem[]> =>
 
     const data: EodhdSearchItem[] = await response.json();
 
-    // Filter to only TA exchange results
-    const taOnlyResults = data.filter(item => item.Exchange === 'TA');
-
-    // Convert prices for TA exchange items
-    const convertedData = taOnlyResults.map(item => ({
+    // Convert prices for all items (TA exchange prices need conversion)
+    const convertedData = data.map(item => ({
       ...item,
       previousClose: convertTaPrice(item.previousClose, item.Exchange),
     }));
 
-    searchCache[query] = { timestamp: Date.now(), data: convertedData };
-    return convertedData;
+    // Sort results with TA exchange first, then alphabetically by name
+    const sortedData = convertedData.sort((a, b) => {
+      // TA exchange items first
+      if (a.Exchange === 'TA' && b.Exchange !== 'TA') return -1;
+      if (a.Exchange !== 'TA' && b.Exchange === 'TA') return 1;
+      // Then sort alphabetically by name
+      return a.Name.localeCompare(b.Name);
+    });
+
+    searchCache[query] = { timestamp: Date.now(), data: sortedData };
+    return sortedData;
   } catch (error) {
     console.error('Error searching assets:', error);
     throw error;

@@ -64,7 +64,7 @@ export const AllocationResults: React.FC<AllocationResultsProps> = ({
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-green-600">
-                      ${formatNumber(result.investmentAmount)}
+                      ₪{formatNumber(result.investmentAmount)}
                     </div>
                     <div className="text-sm text-gray-600">{result.shares} shares</div>
                   </div>
@@ -74,7 +74,7 @@ export const AllocationResults: React.FC<AllocationResultsProps> = ({
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                     <div>
                       <span className="text-gray-600">New Value:</span>
-                      <div className="font-medium">${result.newValue.toFixed(2)}</div>
+                      <div className="font-medium">₪{result.newValue.toFixed(2)}</div>
                     </div>
                     <div>
                       <span className="text-gray-600">New % in Portfolio:</span>
@@ -85,7 +85,7 @@ export const AllocationResults: React.FC<AllocationResultsProps> = ({
                     <div>
                       <span className="text-gray-600">Current Value:</span>
                       <div className="font-medium text-gray-500">
-                        ${result.currentValue.toFixed(2)}
+                        ₪{result.currentValue.toFixed(2)}
                       </div>
                     </div>
                     <div>
@@ -109,20 +109,20 @@ export const AllocationResults: React.FC<AllocationResultsProps> = ({
         <div className="border-t border-gray-200 pt-4">
           <div className="flex justify-between items-center mb-2">
             <span className="text-gray-600">Total Allocated:</span>
-            <span className="font-semibold">${formatNumber(totalAllocated)}</span>
+            <span className="font-semibold">₪{formatNumber(totalAllocated)}</span>
           </div>
           {remainder > 0.01 && (
             <div className="flex justify-between items-center mb-2">
               <span className="text-gray-600">Remaining:</span>
               <span className="font-semibold text-orange-600">
-                ${formatNumber(remainder)}
+                ₪{formatNumber(remainder)}
               </span>
             </div>
           )}
           <div className="flex justify-between items-center text-lg font-bold">
             <span>Additional Investment:</span>
             <span className="text-blue-600">
-              ${formatNumber(totalAdditionalInvestment)}
+              ₪{formatNumber(totalAdditionalInvestment)}
             </span>
           </div>
         </div>
@@ -132,7 +132,7 @@ export const AllocationResults: React.FC<AllocationResultsProps> = ({
             <TrendingUp className="h-4 w-4" />
             <AlertTitle>Note</AlertTitle>
             <AlertDescription>
-              ${formatNumber(remainder)} remains unallocated. This is because no single
+              ₪{formatNumber(remainder)} remains unallocated. This is because no single
               available share purchase could further improve the portfolio balance.
             </AlertDescription>
           </Alert>

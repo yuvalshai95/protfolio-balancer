@@ -2,6 +2,7 @@ export interface Asset {
   symbol: string;
   name: string;
   price: number;
+  lastPrice?: number; // Previous price before last update
   targetAllocation: number;
   currentValue: number;
   exchange?: string; // Optional for backward compatibility

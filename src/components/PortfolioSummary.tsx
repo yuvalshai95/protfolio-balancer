@@ -1,5 +1,5 @@
 import React from 'react';
-import { PieChart, DollarSign, Percent } from 'lucide-react';
+import { PieChart, Percent } from 'lucide-react';
 import { Asset } from '../types';
 import {
   Card,
@@ -10,6 +10,7 @@ import {
 } from '@/components/component-library/card';
 import { Input } from '@/components/component-library/input';
 import { Label } from '@/components/component-library/label';
+import { Badge } from '@/components/component-library/badge';
 import { formatNumber } from '@/utils/formatting';
 
 interface PortfolioSummaryProps {
@@ -52,11 +53,11 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
               <CardTitle className="text-sm font-medium text-blue-800">
                 Current Portfolio Value
               </CardTitle>
-              <DollarSign className="h-5 w-5 text-blue-600" />
+              <span className="text-blue-600 text-xl font-bold">₪</span>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-900">
-                ${formatNumber(totalCurrentValue)}
+                ₪{formatNumber(totalCurrentValue)}
               </div>
             </CardContent>
           </Card>
@@ -69,11 +70,26 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
               <Percent className="h-5 w-5 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div
-                className={`text-2xl font-bold ${
-                  isValidAllocation ? 'text-green-900' : 'text-red-600'
-                }`}>
-                {totalTargetAllocation.toFixed(1)}%
+              <div className="flex items-center gap-2 mb-2">
+                <div
+                  className={`text-2xl font-bold ${
+                    isValidAllocation ? 'text-green-900' : 'text-red-600'
+                  }`}>
+                  {totalTargetAllocation.toFixed(1)}%
+                </div>
+                {isValidAllocation ? (
+                  <Badge
+                    variant="secondary"
+                    className="!px-1.5 !py-0 !text-[10px] bg-green-500 text-white border-0 hover:bg-green-500">
+                    Valid
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="destructive"
+                    className="!px-1.5 !py-0 !text-[10px] bg-red-500 text-white border-0 hover:bg-red-500">
+                    Invalid
+                  </Badge>
+                )}
               </div>
               {!isValidAllocation && (
                 <p className="text-xs text-red-600 mt-1">Should total 100%</p>
@@ -83,7 +99,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
         </div>
 
         <div className="mb-6">
-          <Label htmlFor="additional-investment">Additional Investment Amount ($)</Label>
+          <Label htmlFor="additional-investment">Additional Investment Amount (₪)</Label>
           <Input
             id="additional-investment"
             type="number"

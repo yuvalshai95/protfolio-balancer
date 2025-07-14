@@ -1,5 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Target, Calculator, RefreshCw } from 'lucide-react';
+import {
+  Target,
+  Calculator,
+  RefreshCw,
+  X,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+} from 'lucide-react';
 import { AssetSearch } from './components/AssetSearch';
 import { AssetCard } from './components/AssetCard';
 import { PortfolioSummary } from './components/PortfolioSummary';
@@ -20,6 +28,7 @@ import {
   getApiUsageInfo,
   refreshSingleAssetPrice,
 } from './services/eodhd';
+import { formatPrice } from './utils/formatting';
 
 function App() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -38,6 +47,29 @@ function App() {
     used: number;
     remaining: number;
     total: number;
+  } | null>(null);
+
+  // Single asset update API usage info
+  const [showSingleUpdateApiUsage, setShowSingleUpdateApiUsage] = useState(false);
+  const [singleUpdateApiUsage, setSingleUpdateApiUsage] = useState<{
+    used: number;
+    remaining: number;
+    total: number;
+    isWelcomeBonus: boolean;
+  }>({ used: 0, remaining: 500, total: 500, isWelcomeBonus: true });
+  const [singleUpdateDailyUsage, setSingleUpdateDailyUsage] = useState<{
+    used: number;
+    remaining: number;
+    total: number;
+  } | null>(null);
+
+  // Updated asset info for displaying in callout
+  const [updatedAssetInfo, setUpdatedAssetInfo] = useState<{
+    name: string;
+    symbol: string;
+    oldPrice: number;
+    newPrice: number;
+    exchange?: string;
   } | null>(null);
 
   const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
@@ -112,11 +144,32 @@ function App() {
   const handleRefreshSingle = async (asset: Asset) => {
     try {
       const updatedAsset = await refreshSingleAssetPrice(asset);
-      setAssets(prev => prev.map(a => (a.symbol === asset.symbol ? updatedAsset : a)));
+      // Store the current price as lastPrice before updating
+      const assetWithHistory = { ...updatedAsset, lastPrice: asset.price };
+      setAssets(prev =>
+        prev.map(a => (a.symbol === asset.symbol ? assetWithHistory : a))
+      );
+
+      // Store updated asset info for callout display
+      setUpdatedAssetInfo({
+        name: asset.name,
+        symbol: asset.symbol,
+        oldPrice: asset.price,
+        newPrice: updatedAsset.price,
+        exchange: asset.exchange,
+      });
 
       // Get updated API usage info after single refresh
       const apiInfo = await getApiUsageInfo();
+      setSingleUpdateApiUsage(apiInfo.usage);
+      if (apiInfo.dailyUsage) {
+        setSingleUpdateDailyUsage(apiInfo.dailyUsage);
+      }
       setIsApiLimitReached(apiInfo.limitReached);
+      setShowSingleUpdateApiUsage(true); // Show API usage info
+
+      // Hide bulk refresh API usage if showing
+      setShowRefreshApiUsage(false);
     } catch (error) {
       console.error('Failed to refresh single asset:', error);
       throw error;
@@ -130,10 +183,20 @@ function App() {
 
     setIsRefreshingPrices(true);
     setShowRefreshApiUsage(false); // Hide previous message
+    setShowSingleUpdateApiUsage(false); // Hide single update message
+    setUpdatedAssetInfo(null); // Clear single asset update info
 
     try {
       const refreshedAssets = await refreshAssetPrices(assets);
-      setAssets(refreshedAssets);
+      // Add lastPrice from original assets to show price changes
+      const assetsWithHistory = refreshedAssets.map(refreshedAsset => {
+        const originalAsset = assets.find(a => a.symbol === refreshedAsset.symbol);
+        return {
+          ...refreshedAsset,
+          lastPrice: originalAsset?.price,
+        };
+      });
+      setAssets(assetsWithHistory);
 
       // Get updated API usage info after refresh
       const apiInfo = await getApiUsageInfo();
@@ -219,11 +282,11 @@ function App() {
                     </Button>
                   </div>
 
-                  {/* Refresh API Usage Info */}
+                  {/* Bulk Refresh API Usage Info */}
                   {showRefreshApiUsage && !useMockData && (
                     <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm text-blue-800">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="text-sm text-blue-800 flex-1">
                           <strong>Price Refresh Complete!</strong>
                           <div className="mt-1 space-y-1">
                             <div>
@@ -244,6 +307,92 @@ function App() {
                             </div>
                           </div>
                         </div>
+                        <button
+                          onClick={() => setShowRefreshApiUsage(false)}
+                          className="text-blue-600 hover:text-blue-800 p-1">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Single Asset Update API Usage Info */}
+                  {showSingleUpdateApiUsage && !useMockData && (
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="text-sm text-blue-800 flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <strong>
+                              {updatedAssetInfo
+                                ? `${updatedAssetInfo.name} Updated!`
+                                : 'Asset Updated!'}
+                            </strong>
+                            {updatedAssetInfo && (
+                              <div className="flex items-center gap-1">
+                                {updatedAssetInfo.newPrice > updatedAssetInfo.oldPrice ? (
+                                  <>
+                                    <TrendingUp className="h-4 w-4 text-green-600" />
+                                    <span className="text-green-600 font-medium">
+                                      +
+                                      {formatPrice(
+                                        updatedAssetInfo.newPrice -
+                                          updatedAssetInfo.oldPrice,
+                                        updatedAssetInfo.exchange
+                                      )}
+                                    </span>
+                                  </>
+                                ) : updatedAssetInfo.newPrice <
+                                  updatedAssetInfo.oldPrice ? (
+                                  <>
+                                    <TrendingDown className="h-4 w-4 text-red-600" />
+                                    <span className="text-red-600 font-medium">
+                                      {formatPrice(
+                                        updatedAssetInfo.newPrice -
+                                          updatedAssetInfo.oldPrice,
+                                        updatedAssetInfo.exchange
+                                      )}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Minus className="h-4 w-4 text-gray-600" />
+                                    <span className="text-gray-600 font-medium">
+                                      Price unchanged
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <div className="mt-1 space-y-1">
+                            <div>
+                              Welcome bonus: {singleUpdateApiUsage.used}/
+                              {singleUpdateApiUsage.total} requests used •{' '}
+                              {singleUpdateApiUsage.remaining} remaining
+                            </div>
+                            {singleUpdateDailyUsage && (
+                              <div>
+                                Daily usage: {singleUpdateDailyUsage.used}/
+                                {singleUpdateDailyUsage.total} requests used •{' '}
+                                {singleUpdateDailyUsage.remaining} remaining
+                              </div>
+                            )}
+                            {singleUpdateApiUsage.isWelcomeBonus &&
+                              singleUpdateApiUsage.remaining <= 50 && (
+                                <div className="text-orange-600">
+                                  Close to switching to daily limits (20/day)
+                                </div>
+                              )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setShowSingleUpdateApiUsage(false);
+                            setUpdatedAssetInfo(null);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 p-1">
+                          <X className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
                   )}
