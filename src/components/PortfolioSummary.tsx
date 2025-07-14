@@ -1,5 +1,5 @@
 import React from 'react';
-import { PieChart, Percent } from 'lucide-react';
+import { PieChart, Percent, X } from 'lucide-react';
 import { Asset } from '../types';
 import {
   Card,
@@ -8,8 +8,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/component-library/card';
-import { Input } from '@/components/component-library/input';
-import { Label } from '@/components/component-library/label';
+
 import { Badge } from '@/components/component-library/badge';
 import { formatNumber } from '@/utils/formatting';
 
@@ -47,69 +46,89 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 gap-2 sm:gap-4 mb-4 sm:mb-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-blue-800">
-                Current Portfolio Value
-              </CardTitle>
-              <span className="text-blue-600 text-xl font-bold">₪</span>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-900">
-                ₪{formatNumber(totalCurrentValue)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-green-800">
+            <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium text-green-800">
                 Target Allocation
               </CardTitle>
-              <Percent className="h-5 w-5 text-green-600" />
+              <Percent className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2 mb-2">
+            <CardContent className="pt-2">
+              <div className="mb-2">
                 <div
-                  className={`text-2xl font-bold ${
+                  className={`text-lg sm:text-xl md:text-2xl font-bold mb-2 ${
                     isValidAllocation ? 'text-green-900' : 'text-red-600'
                   }`}>
                   {totalTargetAllocation.toFixed(1)}%
                 </div>
-                {isValidAllocation ? (
-                  <Badge
-                    variant="secondary"
-                    className="!px-1.5 !py-0 !text-[10px] bg-green-500 text-white border-0 hover:bg-green-500">
-                    Valid
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="destructive"
-                    className="!px-1.5 !py-0 !text-[10px] bg-red-500 text-white border-0 hover:bg-red-500">
-                    Invalid
-                  </Badge>
-                )}
+                <div className="flex justify-start">
+                  {isValidAllocation ? (
+                    <Badge
+                      variant="secondary"
+                      className="!px-1 !py-0 !text-[9px] bg-green-500 text-white border-0 hover:bg-green-500 whitespace-nowrap">
+                      Valid
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="destructive"
+                      className="!px-1 !py-0 !text-[9px] bg-red-500 text-white border-0 hover:bg-red-500 whitespace-nowrap">
+                      Invalid
+                    </Badge>
+                  )}
+                </div>
               </div>
               {!isValidAllocation && (
                 <p className="text-xs text-red-600 mt-1">Should total 100%</p>
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium text-blue-800">
+                Current Portfolio Value
+              </CardTitle>
+              <span className="text-blue-600 text-lg sm:text-xl font-bold flex-shrink-0">
+                ₪
+              </span>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="text-lg sm:text-xl md:text-2xl font-bold text-blue-900">
+                ₪{formatNumber(totalCurrentValue)}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="mb-6">
-          <Label htmlFor="additional-investment">Additional Investment Amount (₪)</Label>
-          <Input
-            id="additional-investment"
-            type="number"
-            min="0"
-            step="0.01"
-            value={additionalInvestment || ''}
-            onChange={e => onAdditionalInvestmentChange(parseFloat(e.target.value) || 0)}
-            placeholder="0.00"
-            className="mt-2 focus-visible:ring-blue-500"
-          />
+          <label
+            className="block text-sm font-medium text-gray-700 mb-1"
+            htmlFor="additional-investment">
+            Additional Investment Amount (₪)
+          </label>
+          <div className="relative">
+            <input
+              className="w-full px-4 py-2 pr-10 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              id="additional-investment"
+              type="number"
+              min="0"
+              step="0.01"
+              value={additionalInvestment || ''}
+              onChange={e =>
+                onAdditionalInvestmentChange(parseFloat(e.target.value) || 0)
+              }
+              placeholder="0.00"
+            />
+            {additionalInvestment > 0 && (
+              <button
+                type="button"
+                onClick={() => onAdditionalInvestmentChange(0)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {!isValidAllocation && (

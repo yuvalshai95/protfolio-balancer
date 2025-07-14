@@ -49,49 +49,53 @@ export const AllocationResults: React.FC<AllocationResultsProps> = ({
         <div className="grid gap-4 mb-6">
           {results.map(result => (
             <Card key={result.symbol}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Target className="h-4 w-4 text-blue-600" />
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                      <Target className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{result.symbol}</h3>
-                      <p className="text-sm text-gray-600 truncate max-w-64">
-                        {result.name}
-                      </p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900">
+                        {result.symbol}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-600">{result.name}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-green-600">
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-sm sm:text-lg font-bold text-green-600 whitespace-nowrap">
                       ₪{formatNumber(result.investmentAmount)}
                     </div>
-                    <div className="text-sm text-gray-600">{result.shares} shares</div>
+                    <div className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">
+                      {result.shares} shares
+                    </div>
                   </div>
                 </div>
 
-                <div className="border-t border-gray-200 pt-3 mt-3">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <div>
+                <div className="border-t border-gray-200 pt-2 sm:pt-3 mt-2 sm:mt-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-2 sm:gap-x-4 gap-y-2 sm:gap-y-3 text-xs sm:text-sm">
+                    <div className="flex justify-between sm:block">
                       <span className="text-gray-600">New Value:</span>
-                      <div className="font-medium">₪{result.newValue.toFixed(2)}</div>
+                      <div className="font-medium whitespace-nowrap">
+                        ₪{formatNumber(result.newValue)}
+                      </div>
                     </div>
-                    <div>
+                    <div className="flex justify-between sm:block">
                       <span className="text-gray-600">New % in Portfolio:</span>
-                      <div className="font-medium">
+                      <div className="font-medium whitespace-nowrap">
                         {result.newPortfolioPercentage.toFixed(2)}%
                       </div>
                     </div>
-                    <div>
+                    <div className="flex justify-between sm:block">
                       <span className="text-gray-600">Current Value:</span>
-                      <div className="font-medium text-gray-500">
-                        ₪{result.currentValue.toFixed(2)}
+                      <div className="font-medium text-gray-500 whitespace-nowrap">
+                        ₪{formatNumber(result.currentValue)}
                       </div>
                     </div>
-                    <div>
+                    <div className="flex justify-between sm:block">
                       <span className="text-gray-600">New Diff from Target:</span>
                       <div
-                        className={`font-medium ${
+                        className={`font-medium whitespace-nowrap ${
                           result.newDifferenceFromTarget > 0
                             ? 'text-red-600'
                             : 'text-green-600'

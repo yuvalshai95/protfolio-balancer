@@ -445,14 +445,14 @@ export const AssetSearch: React.FC<AssetSearchProps> = ({
                                   {isTaExchange && (
                                     <Badge
                                       variant="secondary"
-                                      className="!px-1.5 !py-0 !text-[10px] bg-blue-500 text-white border-0 hover:bg-blue-500">
+                                      className="!px-1.5 !py-0 !text-[10px] bg-blue-500 text-white border-0 hover:bg-blue-500 whitespace-nowrap">
                                       TA Exchange
                                     </Badge>
                                   )}
                                   {isExisting && (
                                     <Badge
                                       variant="outline"
-                                      className="!px-1.5 !py-0 !text-[10px] bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-100">
+                                      className="!px-1.5 !py-0 !text-[10px] bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-100 whitespace-nowrap">
                                       Already in portfolio
                                     </Badge>
                                   )}

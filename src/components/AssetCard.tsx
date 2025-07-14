@@ -7,6 +7,7 @@ import {
   Minus,
   TrendingUp,
   TrendingDown,
+  X,
 } from 'lucide-react';
 import { Asset } from '@/types';
 import { formatPrice, formatTimeSinceUpdate, isAssetStale } from '@/utils/formatting';
@@ -45,66 +46,68 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-lg w-full">
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg w-full">
       {/* Header */}
-      <header className="flex items-start justify-between mb-4">
-        <div className="flex items-start">
-          <div className="bg-green-100 w-12 h-12 rounded-full mr-4 shrink-0 relative">
+      <header className="flex items-start justify-between mb-4 gap-2">
+        <div className="flex items-start min-w-0 flex-1">
+          <div className="bg-green-100 w-10 h-10 sm:w-12 sm:h-12 rounded-full mr-3 sm:mr-4 shrink-0 relative">
             <span
-              className="text-green-600 text-3xl font-bold absolute inset-0 flex items-center justify-center"
+              className="text-green-600 text-xl sm:text-2xl md:text-xl lg:text-3xl font-bold absolute inset-0 flex items-center justify-center"
               style={{ lineHeight: '1', transform: 'translateY(-4px)' }}>
               ₪
             </span>
           </div>
           <div className="flex-1 min-w-0">
             <h2
-              className="text-lg font-bold text-gray-800 leading-tight cursor-help"
+              className="text-base sm:text-lg font-bold text-gray-800 leading-tight cursor-help truncate"
               title={asset.name}>
               {asset.name}
             </h2>
-            <div className="flex items-center gap-2 mb-1">
-              <p className="text-sm text-gray-500">{asset.symbol} (Symbol)</p>
-              {asset.exchange === 'TA' && (
-                <Badge
-                  variant="secondary"
-                  className="!px-1.5 !py-0 !text-[10px] bg-blue-500 text-white border-0 hover:bg-blue-500">
-                  TA Exchange
-                </Badge>
-              )}
-              {asset.exchange === 'US' && (
-                <Badge
-                  variant="default"
-                  className="!px-1.5 !py-0 !text-[10px] bg-indigo-500 text-white border-0 hover:bg-indigo-500">
-                  US Exchange
-                </Badge>
-              )}
-              {asset.exchange && asset.exchange !== 'TA' && asset.exchange !== 'US' && (
-                <Badge
-                  variant="outline"
-                  className="!px-1.5 !py-0 !text-[10px] bg-purple-500 text-white border-0 hover:bg-purple-500">
-                  {asset.exchange} Exchange
-                </Badge>
-              )}
-              {isStale && (
-                <Badge
-                  variant="destructive"
-                  className="!px-1.5 !py-0 !text-[10px] bg-red-500 text-white border-0 hover:bg-red-500">
-                  Stale Data
-                </Badge>
-              )}
+            <div className="mb-1">
+              <p className="text-sm text-gray-500 mb-1">{asset.symbol} (Symbol)</p>
+              <div className="flex items-center flex-wrap gap-1">
+                {asset.exchange === 'TA' && (
+                  <Badge
+                    variant="secondary"
+                    className="!px-1.5 !py-0 !text-[10px] bg-blue-500 text-white border-0 hover:bg-blue-500 whitespace-nowrap">
+                    TA Exchange
+                  </Badge>
+                )}
+                {asset.exchange === 'US' && (
+                  <Badge
+                    variant="default"
+                    className="!px-1.5 !py-0 !text-[10px] bg-indigo-500 text-white border-0 hover:bg-indigo-500 whitespace-nowrap">
+                    US Exchange
+                  </Badge>
+                )}
+                {asset.exchange && asset.exchange !== 'TA' && asset.exchange !== 'US' && (
+                  <Badge
+                    variant="outline"
+                    className="!px-1.5 !py-0 !text-[10px] bg-purple-500 text-white border-0 hover:bg-purple-500 whitespace-nowrap">
+                    {asset.exchange} Exchange
+                  </Badge>
+                )}
+                {isStale && (
+                  <Badge
+                    variant="destructive"
+                    className="!px-1.5 !py-0 !text-[10px] bg-red-500 text-white border-0 hover:bg-red-500 whitespace-nowrap">
+                    Stale Data
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
         </div>
         <button
           onClick={() => onRemoveAsset(asset.symbol)}
-          className="text-gray-400 hover:text-gray-600 p-1">
-          <Trash2 className="h-5 w-5" />
+          className="text-gray-400 hover:text-gray-600 p-1 shrink-0">
+          <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
       </header>
 
       {/* Price and Update Section */}
       <div className="mb-6">
-        <p className="text-3xl font-bold text-gray-800 mb-2 tabular-nums">
+        <p className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 tabular-nums">
           {isNaN(asset.price) ? '₪0.00' : formatPrice(asset.price, asset.exchange)}
         </p>
         {asset.lastPrice && (
@@ -133,7 +136,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             )}
           </div>
         )}
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm gap-2">
           <div className="flex items-center text-gray-500">
             <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
             {onRefreshSingle ? (
@@ -170,19 +173,29 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             htmlFor={`target-allocation-${asset.symbol}`}>
             Target Allocation (%)
           </label>
-          <input
-            className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            id={`target-allocation-${asset.symbol}`}
-            type="number"
-            min="0"
-            max="100"
-            step="0.1"
-            value={asset.targetAllocation || ''}
-            onChange={e =>
-              onUpdateAllocation(asset.symbol, parseFloat(e.target.value) || 0)
-            }
-            placeholder="0.0"
-          />
+          <div className="relative">
+            <input
+              className="w-full px-4 py-2 pr-10 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              id={`target-allocation-${asset.symbol}`}
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              value={asset.targetAllocation || ''}
+              onChange={e =>
+                onUpdateAllocation(asset.symbol, parseFloat(e.target.value) || 0)
+              }
+              placeholder="0.0"
+            />
+            {asset.targetAllocation > 0 && (
+              <button
+                type="button"
+                onClick={() => onUpdateAllocation(asset.symbol, 0)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
         <div>
           <label
@@ -190,18 +203,28 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             htmlFor={`current-value-${asset.symbol}`}>
             Current Value ({asset.exchange === 'TA' ? '₪' : '$'})
           </label>
-          <input
-            className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            id={`current-value-${asset.symbol}`}
-            type="number"
-            min="0"
-            step="0.01"
-            value={asset.currentValue || ''}
-            onChange={e =>
-              onUpdateCurrentValue(asset.symbol, parseFloat(e.target.value) || 0)
-            }
-            placeholder="0.00"
-          />
+          <div className="relative">
+            <input
+              className="w-full px-4 py-2 pr-10 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              id={`current-value-${asset.symbol}`}
+              type="number"
+              min="0"
+              step="0.01"
+              value={asset.currentValue || ''}
+              onChange={e =>
+                onUpdateCurrentValue(asset.symbol, parseFloat(e.target.value) || 0)
+              }
+              placeholder="0.00"
+            />
+            {asset.currentValue > 0 && (
+              <button
+                type="button"
+                onClick={() => onUpdateCurrentValue(asset.symbol, 0)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
