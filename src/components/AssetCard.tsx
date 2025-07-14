@@ -67,37 +67,41 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             </div>
 
             {/* Price and Update Status */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between">
               <div className="text-sm sm:text-lg font-semibold text-green-600 tabular-nums">
                 {isNaN(asset.price) ? '₪0.00' : formatPrice(asset.price, asset.exchange)}
               </div>
-              {onRefreshSingle && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                  className="h-7 px-2 text-xs">
-                  <RefreshCw
-                    className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`}
-                  />
-                  {isRefreshing ? 'Updating...' : 'Update'}
-                </Button>
-              )}
-            </div>
+              <div className="flex flex-col items-end">
+                {onRefreshSingle && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="h-7 px-2 text-xs">
+                    <RefreshCw
+                      className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`}
+                    />
+                    {isRefreshing ? 'Updating...' : 'Update'}
+                  </Button>
+                )}
 
-            {/* Last Update Status */}
-            <div className="flex items-center gap-1 mt-1">
-              <Clock className="h-3 w-3 text-gray-400" />
-              <span
-                className={`text-xs ${isStale ? 'text-orange-600' : 'text-gray-500'}`}>
-                {timeSinceUpdate}
-              </span>
-              {isStale && (
-                <span title="Price may be outdated">
-                  <AlertCircle className="h-3 w-3 text-orange-500 ml-1" />
-                </span>
-              )}
+                {/* Last Update Status - positioned under the update button (or aligned right if no button) */}
+                <div className="flex items-center gap-1 mt-1">
+                  <Clock className="h-3 w-3 text-gray-400" />
+                  <span
+                    className={`text-xs ${
+                      isStale ? 'text-orange-600' : 'text-gray-500'
+                    }`}>
+                    {timeSinceUpdate}
+                  </span>
+                  {isStale && (
+                    <span title="Price may be outdated">
+                      <AlertCircle className="h-3 w-3 text-orange-500 ml-1" />
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
           <Button
