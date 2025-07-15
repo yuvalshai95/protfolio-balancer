@@ -114,7 +114,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
 
       {/* Price and Update Section */}
       <div className="mb-4">
-        <p className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 tabular-nums">
+        <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 tabular-nums">
           {isNaN(asset.price) ? '₪0.00' : formatPrice(asset.price, asset.exchange)}
         </p>
         {asset.lastPrice && (
@@ -144,17 +144,22 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           </div>
         )}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm gap-2">
-          <div className="flex items-center text-gray-500">
-            <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <div className="flex items-center">
             {onRefreshSingle ? (
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="text-blue-600 hover:underline disabled:opacity-50">
+                className="flex items-center text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50">
+                <RefreshCw
+                  className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`}
+                />
                 {isRefreshing ? 'Updating...' : 'Update Price'}
               </button>
             ) : (
-              <span className="text-gray-400">No updates available</span>
+              <div className="flex items-center text-gray-400">
+                <RefreshCw className="h-4 w-4 mr-1" />
+                <span>No updates available</span>
+              </div>
             )}
           </div>
           <div
@@ -173,18 +178,18 @@ export const AssetCard: React.FC<AssetCardProps> = ({
       </div>
 
       {/* Current Portfolio Percentage */}
-      <div className="mb-6 bg-gray-50 rounded-lg p-3">
-        <div className="flex items-center gap-2 mb-1">
+      <div className="mb-6 bg-purple-50 rounded-lg p-4">
+        <div className="flex items-center gap-2 mb-2">
           <PieChart className="h-4 w-4 text-purple-600" />
           <span className="text-sm font-medium text-gray-700">
             Current Portfolio Weight
           </span>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-purple-600">
+        <div className="flex items-baseline">
+          <span className="text-2xl sm:text-3xl font-bold text-purple-600">
             {currentPercentage.toFixed(2)}%
           </span>
-          <span className="text-sm text-gray-500">of total portfolio</span>
+          <span className="ml-2 text-sm text-gray-500">of total portfolio</span>
         </div>
       </div>
 
@@ -198,7 +203,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           </label>
           <div className="relative">
             <input
-              className="w-full px-4 py-2 pr-10 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 pr-10 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               id={`target-allocation-${asset.symbol}`}
               type="number"
               min="0"
@@ -228,7 +233,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
           </label>
           <div className="relative">
             <input
-              className="w-full px-4 py-2 pr-10 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 pr-10 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               id={`current-value-${asset.symbol}`}
               type="number"
               min="0"
