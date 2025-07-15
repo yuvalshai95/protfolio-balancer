@@ -8,6 +8,7 @@ import {
   TrendingUp,
   TrendingDown,
   X,
+  PieChart,
 } from 'lucide-react';
 import { Asset } from '@/types';
 import { formatPrice, formatTimeSinceUpdate, isAssetStale } from '@/utils/formatting';
@@ -15,6 +16,7 @@ import { Badge } from '@/components/component-library/badge';
 
 interface AssetCardProps {
   asset: Asset;
+  totalPortfolioValue: number;
   onUpdateAllocation: (symbol: string, allocation: number) => void;
   onUpdateCurrentValue: (symbol: string, value: number) => void;
   onRemoveAsset: (symbol: string) => void;
@@ -23,6 +25,7 @@ interface AssetCardProps {
 
 export const AssetCard: React.FC<AssetCardProps> = ({
   asset,
+  totalPortfolioValue,
   onUpdateAllocation,
   onUpdateCurrentValue,
   onRemoveAsset,
@@ -31,6 +34,10 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const isStale = isAssetStale(asset.lastUpdated);
   const timeSinceUpdate = formatTimeSinceUpdate(asset.lastUpdated);
+
+  // Calculate current portfolio percentage
+  const currentPercentage =
+    totalPortfolioValue > 0 ? (asset.currentValue / totalPortfolioValue) * 100 : 0;
 
   const handleRefresh = async () => {
     if (!onRefreshSingle || isRefreshing) return;
@@ -106,7 +113,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
       </header>
 
       {/* Price and Update Section */}
-      <div className="mb-6">
+      <div className="mb-4">
         <p className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 tabular-nums">
           {isNaN(asset.price) ? '₪0.00' : formatPrice(asset.price, asset.exchange)}
         </p>
@@ -162,6 +169,22 @@ export const AssetCard: React.FC<AssetCardProps> = ({
               </span>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Current Portfolio Percentage */}
+      <div className="mb-6 bg-gray-50 rounded-lg p-3">
+        <div className="flex items-center gap-2 mb-1">
+          <PieChart className="h-4 w-4 text-purple-600" />
+          <span className="text-sm font-medium text-gray-700">
+            Current Portfolio Weight
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-bold text-purple-600">
+            {currentPercentage.toFixed(2)}%
+          </span>
+          <span className="text-sm text-gray-500">of total portfolio</span>
         </div>
       </div>
 

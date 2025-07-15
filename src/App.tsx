@@ -218,6 +218,9 @@ function App() {
   const hasAssets = assets.length > 0;
   const canCalculate = hasAssets && isValidPortfolio && additionalInvestment > 0;
 
+  // Calculate total portfolio value for current percentage display
+  const totalPortfolioValue = assets.reduce((sum, asset) => sum + asset.currentValue, 0);
+
   const allocationResults = useMemo(() => {
     if (canCalculate) {
       return calculateOptimalAllocation(assets, additionalInvestment);
@@ -402,6 +405,7 @@ function App() {
                       <AssetCard
                         key={asset.symbol}
                         asset={asset}
+                        totalPortfolioValue={totalPortfolioValue}
                         onUpdateAllocation={handleUpdateAllocation}
                         onUpdateCurrentValue={handleUpdateCurrentValue}
                         onRemoveAsset={handleRemoveAsset}
