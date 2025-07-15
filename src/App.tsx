@@ -36,6 +36,7 @@ function App() {
   const [isRefreshingPrices, setIsRefreshingPrices] = useState(false);
   const [welcomeMessage, setWelcomeMessage] = useState<string | null>(null);
   const [isApiLimitReached, setIsApiLimitReached] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [showRefreshApiUsage, setShowRefreshApiUsage] = useState(false);
   const [refreshApiUsage, setRefreshApiUsage] = useState<{
     used: number;
@@ -91,7 +92,13 @@ function App() {
           setIsApiLimitReached(limitReached);
         } catch (error) {
           console.error('Failed to fetch user data:', error);
+          // Don't show welcome message if API fails, but continue with app
+        } finally {
+          setIsInitialLoading(false);
         }
+      } else {
+        // For mock data, skip loading
+        setIsInitialLoading(false);
       }
     };
 
@@ -227,6 +234,36 @@ function App() {
     }
     return [];
   }, [assets, additionalInvestment, canCalculate]);
+
+  // Beautiful Loader Component
+  const Loader = () => (
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <Header />
+      <main className="flex-grow flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative mb-6">
+            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
+              <div className="w-16 h-16 border-4 border-transparent border-t-purple-500 rounded-full animate-spin-delayed"></div>
+            </div>
+          </div>
+          <div className="loader-pulse">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              Loading Portfolio Balancer
+            </h2>
+            <p className="text-lg text-gray-600 mb-1">Setting up your dashboard...</p>
+            <p className="text-sm text-gray-500">Connecting to EODHD API</p>
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+
+  // Show loader while initial API call is in progress
+  if (isInitialLoading) {
+    return <Loader />;
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">

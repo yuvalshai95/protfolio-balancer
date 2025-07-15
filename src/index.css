@@ -66,3 +66,22 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom animations for beautiful loader */
+@keyframes spin-delayed {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-delayed {
+  animation: spin-delayed 1s linear infinite;
+  animation-delay: 0.2s;
+}
+
+.loader-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
