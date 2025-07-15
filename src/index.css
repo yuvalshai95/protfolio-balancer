@@ -67,7 +67,7 @@
   }
 }
 
-/* Custom animations for beautiful loader */
+/* Custom animations for loader */
 @keyframes spin-delayed {
   0% {
     transform: rotate(0deg);
