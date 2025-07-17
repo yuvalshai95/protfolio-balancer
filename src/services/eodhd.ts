@@ -462,6 +462,7 @@ export const getRealtimePrice = async (
       targetAllocation: 0,
       exchange: exchange,
       lastUpdated: Date.now(),
+      minBuyPrice: convertedPrice, // Default to full share price for manual calculator
     };
 
     return asset;

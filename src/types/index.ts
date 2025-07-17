@@ -7,6 +7,7 @@ export interface Asset {
   currentValue: number;
   exchange?: string; // Optional for backward compatibility
   lastUpdated?: number; // Timestamp when price was last updated
+  minBuyPrice?: number; // Minimum buy increment (defaults to price if not specified)
 }
 
 export interface PortfolioData {

@@ -287,6 +287,8 @@ export const AssetSearch: React.FC<AssetSearchProps> = ({
           currentValue: 0,
           exchange: asset.Exchange,
           lastUpdated: Date.now(),
+          minBuyPrice:
+            asset.Exchange === 'TA' ? asset.previousClose / 100 : asset.previousClose, // Default to full share price
         };
       } else {
         newAsset = await getRealtimePrice(asset.Code, asset.Exchange, asset.Name);
@@ -428,7 +430,7 @@ export const AssetSearch: React.FC<AssetSearchProps> = ({
                           const isTaExchange = asset.Exchange === 'TA';
                           return (
                             <CommandItem
-                              key={asset.ISIN || asset.Code}
+                              key={`${asset.Code}-${asset.Exchange}`}
                               value={`${asset.Code} - ${asset.Name}`}
                               onSelect={() => !isExisting && handleSelectAsset(asset)}
                               className={`flex items-center justify-between ${

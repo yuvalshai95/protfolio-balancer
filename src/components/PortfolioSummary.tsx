@@ -1,5 +1,5 @@
 import React from 'react';
-import { PieChart, Percent, X } from 'lucide-react';
+import { PieChart, Percent, X, Calculator } from 'lucide-react';
 import { Asset } from '../types';
 import {
   Card,
@@ -8,20 +8,29 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/component-library/card';
-
+import { Button } from '@/components/component-library/button';
+import { Switch } from '@/components/component-library/switch';
 import { Badge } from '@/components/component-library/badge';
 import { formatNumber } from '@/utils/formatting';
 
 interface PortfolioSummaryProps {
   assets: Asset[];
   additionalInvestment: number;
+  isAutoCalculate: boolean;
+  canCalculate: boolean;
   onAdditionalInvestmentChange: (amount: number) => void;
+  onAutoCalculateChange: (auto: boolean) => void;
+  onManualCalculate: () => void;
 }
 
 export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
   assets,
   additionalInvestment,
+  isAutoCalculate,
+  canCalculate,
   onAdditionalInvestmentChange,
+  onAutoCalculateChange,
+  onManualCalculate,
 }) => {
   const totalCurrentValue = assets.reduce((sum, asset) => sum + asset.currentValue, 0);
   const totalTargetAllocation = assets.reduce(
@@ -101,6 +110,36 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
           </Card>
         </div>
 
+        {/* Calculation Mode Switch */}
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Calculator className="h-4 w-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">Calculation Mode</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-xs ${
+                  !isAutoCalculate ? 'text-gray-900 font-medium' : 'text-gray-500'
+                }`}>
+                Manual
+              </span>
+              <Switch checked={isAutoCalculate} onCheckedChange={onAutoCalculateChange} />
+              <span
+                className={`text-xs ${
+                  isAutoCalculate ? 'text-gray-900 font-medium' : 'text-gray-500'
+                }`}>
+                Auto
+              </span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-600">
+            {isAutoCalculate
+              ? 'Investment recommendations update automatically when you change values'
+              : 'Click Calculate to generate investment recommendations manually'}
+          </p>
+        </div>
+
         <div className="mb-6">
           <label
             className="block text-sm font-medium text-gray-700 mb-1"
@@ -130,6 +169,20 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
             )}
           </div>
         </div>
+
+        {/* Manual Calculate Button */}
+        {!isAutoCalculate && additionalInvestment > 0 && isValidAllocation && (
+          <div className="mb-6">
+            <Button
+              onClick={onManualCalculate}
+              disabled={!canCalculate}
+              className="w-full"
+              size="sm">
+              <Calculator className="h-4 w-4 mr-2" />
+              Calculate Investment Recommendations
+            </Button>
+          </div>
+        )}
 
         {!isValidAllocation && (
           <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
