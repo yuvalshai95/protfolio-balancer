@@ -9,6 +9,7 @@ import {
   TrendingDown,
   X,
   PieChart,
+  Info,
 } from 'lucide-react';
 import { Asset } from '@/types';
 import { formatPrice, formatTimeSinceUpdate, isAssetStale } from '@/utils/formatting';
@@ -32,6 +33,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   onRefreshSingle,
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showPriceTooltip, setShowPriceTooltip] = useState(false);
   const isStale = isAssetStale(asset.lastUpdated);
   const timeSinceUpdate = formatTimeSinceUpdate(asset.lastUpdated);
 
@@ -50,6 +52,10 @@ export const AssetCard: React.FC<AssetCardProps> = ({
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const togglePriceTooltip = () => {
+    setShowPriceTooltip(!showPriceTooltip);
   };
 
   return (
@@ -114,9 +120,27 @@ export const AssetCard: React.FC<AssetCardProps> = ({
 
       {/* Price and Update Section */}
       <div className="mb-4">
-        <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 tabular-nums">
-          {isNaN(asset.price) ? '₪0.00' : formatPrice(asset.price, asset.exchange)}
-        </p>
+        <div className="flex items-center gap-2 mb-2">
+          <p className="text-3xl sm:text-4xl font-bold text-gray-900 tabular-nums">
+            {isNaN(asset.price) ? '₪0.00' : formatPrice(asset.price, asset.exchange)}
+          </p>
+          <div className="relative">
+            <button
+              onClick={togglePriceTooltip}
+              onMouseEnter={() => setShowPriceTooltip(true)}
+              onMouseLeave={() => setShowPriceTooltip(false)}
+              className="text-gray-400 p-1 rounded-full cursor-help"
+              aria-label="Price information">
+              <Info className="h-4 w-4" />
+            </button>
+            {showPriceTooltip && (
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-10 whitespace-nowrap">
+                This price is the last known previous closing price
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800"></div>
+              </div>
+            )}
+          </div>
+        </div>
         {asset.lastPrice && (
           <div className="text-xs -mt-1 mb-1">
             {asset.price > asset.lastPrice ? (

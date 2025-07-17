@@ -12,6 +12,7 @@ import { AssetSearch } from './components/AssetSearch';
 import { AssetCard } from './components/AssetCard';
 import { PortfolioSummary } from './components/PortfolioSummary';
 import { AllocationResults } from './components/AllocationResults';
+import { ManualInvestmentCalculator } from './components/ManualInvestmentCalculator';
 import { Loader } from './components/Loader';
 import { Asset } from './types';
 import { calculateOptimalAllocation, validatePortfolio } from './utils/calculations';
@@ -38,6 +39,14 @@ function App() {
   const [welcomeMessage, setWelcomeMessage] = useState<string | null>(null);
   const [isApiLimitReached, setIsApiLimitReached] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  // Calculation mode and manual results
+  const [isAutoCalculate, setIsAutoCalculate] = useState(true);
+  const [manualAllocationResults, setManualAllocationResults] = useState<
+    ReturnType<typeof calculateOptimalAllocation>
+  >([]);
+  const [showManualCalculator, setShowManualCalculator] = useState(false);
+
   const [showRefreshApiUsage, setShowRefreshApiUsage] = useState(false);
   const [refreshApiUsage, setRefreshApiUsage] = useState<{
     used: number;
@@ -229,12 +238,74 @@ function App() {
   // Calculate total portfolio value for current percentage display
   const totalPortfolioValue = assets.reduce((sum, asset) => sum + asset.currentValue, 0);
 
+  // Automatic allocation calculation (only when in auto mode)
   const allocationResults = useMemo(() => {
-    if (canCalculate) {
+    if (canCalculate && isAutoCalculate) {
       return calculateOptimalAllocation(assets, additionalInvestment);
     }
     return [];
-  }, [assets, additionalInvestment, canCalculate]);
+  }, [assets, additionalInvestment, canCalculate, isAutoCalculate]);
+
+  // Manual calculation handler
+  const handleManualCalculate = () => {
+    if (canCalculate) {
+      setShowManualCalculator(true);
+      setManualAllocationResults([]);
+    }
+  };
+
+  // Handle manual investment confirmation
+  const handleConfirmManualInvestment = (
+    shareInputs: Array<{ symbol: string; shares: number }>
+  ) => {
+    // Here you would typically update the portfolio with the manual investments
+    // For now, we'll just hide the calculator and show results
+    setShowManualCalculator(false);
+
+    // Convert manual inputs back to allocation results format for display
+    const results = shareInputs.map(input => {
+      const asset = assets.find(a => a.symbol === input.symbol)!;
+      const investmentAmount = input.shares * asset.price;
+      const newValue = asset.currentValue + investmentAmount;
+      const newTotalPortfolioValue = totalPortfolioValue + additionalInvestment;
+      const newPortfolioPercentage = (newValue / newTotalPortfolioValue) * 100;
+      const newDifferenceFromTarget = newPortfolioPercentage - asset.targetAllocation;
+
+      return {
+        symbol: asset.symbol,
+        name: asset.name,
+        price: asset.price,
+        currentValue: asset.currentValue,
+        targetAllocation: asset.targetAllocation,
+        investmentAmount,
+        shares: input.shares,
+        newValue,
+        newPortfolioPercentage,
+        newDifferenceFromTarget,
+      };
+    });
+
+    setManualAllocationResults(results);
+  };
+
+  // Handle auto/manual calculation mode change
+  const handleAutoCalculateChange = (auto: boolean) => {
+    setIsAutoCalculate(auto);
+    // Clear manual results when switching to auto mode
+    if (auto) {
+      setManualAllocationResults([]);
+      setShowManualCalculator(false);
+    }
+  };
+
+  // Get the current results based on mode
+  const currentAllocationResults = isAutoCalculate
+    ? allocationResults
+    : manualAllocationResults;
+  const shouldShowResults = isAutoCalculate
+    ? canCalculate
+    : manualAllocationResults.length > 0;
+  const shouldShowManualCalc = !isAutoCalculate && showManualCalculator && canCalculate;
 
   // Show loader while initial API call is in progress
   if (isInitialLoading) {
@@ -436,14 +507,26 @@ function App() {
                 <PortfolioSummary
                   assets={assets}
                   additionalInvestment={additionalInvestment}
+                  isAutoCalculate={isAutoCalculate}
+                  canCalculate={canCalculate}
                   onAdditionalInvestmentChange={setAdditionalInvestment}
+                  onAutoCalculateChange={handleAutoCalculateChange}
+                  onManualCalculate={handleManualCalculate}
                 />
               )}
 
-              {canCalculate && (
+              {shouldShowResults && (
                 <AllocationResults
-                  results={allocationResults}
+                  results={currentAllocationResults}
                   totalAdditionalInvestment={additionalInvestment}
+                />
+              )}
+
+              {shouldShowManualCalc && (
+                <ManualInvestmentCalculator
+                  assets={assets}
+                  totalAdditionalInvestment={additionalInvestment}
+                  onConfirmInvestment={handleConfirmManualInvestment}
                 />
               )}
 
