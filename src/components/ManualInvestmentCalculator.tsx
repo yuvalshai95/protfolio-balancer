@@ -231,15 +231,15 @@ export const ManualInvestmentCalculator: React.FC<ManualInvestmentCalculatorProp
                   }`}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                           <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                             {result.symbol}
                           </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                          <p className="text-sm text-gray-600 dark:text-gray-300 truncate">
                             {result.name}
                           </p>
                         </div>

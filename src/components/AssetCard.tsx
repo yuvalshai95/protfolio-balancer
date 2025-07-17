@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Trash2,
   RefreshCw,
@@ -10,18 +10,34 @@ import {
   X,
   PieChart,
   Info,
+  Edit2,
+  Save,
+  Loader2,
 } from 'lucide-react';
 import { Asset } from '@/types';
 import { formatPrice, formatTimeSinceUpdate, isAssetStale } from '@/utils/formatting';
 import { Badge } from '@/components/component-library/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/component-library/alert-dialog';
 
 interface AssetCardProps {
   asset: Asset;
   totalPortfolioValue: number;
   onUpdateAllocation: (symbol: string, allocation: number) => void;
   onUpdateCurrentValue: (symbol: string, value: number) => void;
-  onRemoveAsset: (symbol: string) => void;
+  onRemoveAsset: (symbol: string) => Promise<void> | void;
   onRefreshSingle?: (asset: Asset) => Promise<void>;
+  onAssetRename: (symbol: string, newName: string) => void;
+  assets: Asset[]; // Need this for uniqueness validation
 }
 
 export const AssetCard: React.FC<AssetCardProps> = ({
@@ -31,15 +47,130 @@ export const AssetCard: React.FC<AssetCardProps> = ({
   onUpdateCurrentValue,
   onRemoveAsset,
   onRefreshSingle,
+  onAssetRename,
+  assets,
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showPriceTooltip, setShowPriceTooltip] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // State for inline editing
+  const [editingAsset, setEditingAsset] = useState(false);
+  const [tempName, setTempName] = useState('');
+  const [validationError, setValidationError] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const isStale = isAssetStale(asset.lastUpdated);
   const timeSinceUpdate = formatTimeSinceUpdate(asset.lastUpdated);
 
   // Calculate current portfolio percentage
   const currentPercentage =
     totalPortfolioValue > 0 ? (asset.currentValue / totalPortfolioValue) * 100 : 0;
+
+  // Auto-focus input when editing starts
+  useEffect(() => {
+    if (editingAsset && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingAsset]);
+
+  /**
+   * Validates asset name according to requirements
+   */
+  const validateAssetName = (name: string): string => {
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+      return 'Name cannot be empty';
+    }
+
+    if (trimmedName.length > 20) {
+      return 'Name must be 20 characters or less';
+    }
+
+    // Check uniqueness among other assets
+    const isUnique = !assets.some(
+      a => a.symbol !== asset.symbol && a.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+
+    if (!isUnique) {
+      return 'Name must be unique among assets';
+    }
+
+    return '';
+  };
+
+  /**
+   * Starts editing an asset name
+   */
+  const startEditing = () => {
+    setEditingAsset(true);
+    setTempName(asset.name);
+    setValidationError('');
+  };
+
+  /**
+   * Saves the edited asset name
+   */
+  const saveEdit = () => {
+    const error = validateAssetName(tempName);
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+
+    const trimmedName = tempName.trim();
+    onAssetRename(asset.symbol, trimmedName);
+    cancelEdit();
+  };
+
+  /**
+   * Cancels editing without saving
+   */
+  const cancelEdit = () => {
+    setEditingAsset(false);
+    setTempName('');
+    setValidationError('');
+  };
+
+  /**
+   * Handles keyboard events for the input
+   */
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveEdit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEdit();
+    }
+  };
+
+  /**
+   * Handles input blur with a small delay to allow button clicks
+   */
+  const handleBlur = () => {
+    setTimeout(() => {
+      if (editingAsset && !validationError) {
+        saveEdit();
+      }
+    }, 100);
+  };
+
+  /**
+   * Handles asset deletion with loading state
+   */
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onRemoveAsset(asset.symbol);
+    } catch (error) {
+      console.error('Failed to delete asset:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleRefresh = async () => {
     if (!onRefreshSingle || isRefreshing) return;
@@ -71,11 +202,62 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <h2
-              className="text-base sm:text-lg font-bold text-gray-800 leading-tight cursor-help truncate"
-              title={asset.name}>
-              {asset.name}
-            </h2>
+            {/* Inline Editing for Asset Name */}
+            <div className="relative mb-1">
+              {editingAsset ? (
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={tempName}
+                      onChange={e => setTempName(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      onBlur={handleBlur}
+                      className={`w-full px-2 py-1 text-base sm:text-lg font-bold border rounded transition-all duration-75 focus:outline-none focus:ring-2 dark:bg-gray-800 dark:text-gray-100 ${
+                        validationError
+                          ? 'border-red-300 focus:ring-red-500 focus:border-red-500 dark:border-red-600'
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600'
+                      }`}
+                      placeholder="Asset name"
+                      maxLength={20}
+                    />
+                    {validationError && (
+                      <div className="absolute top-full left-0 mt-1 px-2 py-1 bg-red-100 dark:bg-red-900/50 border border-red-200 dark:border-red-800 rounded text-xs text-red-600 dark:text-red-400 whitespace-nowrap z-20">
+                        {validationError}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={saveEdit}
+                    className="p-1 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors duration-75 shrink-0"
+                    title="Save">
+                    <Save className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={cancelEdit}
+                    className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-75 shrink-0"
+                    title="Cancel">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h2
+                    className="text-base sm:text-lg font-bold text-gray-800 leading-tight cursor-help truncate flex-1"
+                    title={asset.name}>
+                    {asset.name}
+                  </h2>
+                  <button
+                    onClick={startEditing}
+                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors duration-75 shrink-0"
+                    title="Edit name">
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div className="mb-1">
               <p className="text-sm text-gray-500 mb-1">{asset.symbol} (Symbol)</p>
               <div className="flex items-center flex-wrap gap-1">
@@ -111,11 +293,41 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             </div>
           </div>
         </div>
-        <button
-          onClick={() => onRemoveAsset(asset.symbol)}
-          className="text-gray-400 hover:text-gray-600 p-1 shrink-0">
-          <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
-        </button>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              className="text-gray-400 hover:text-gray-600 p-1 shrink-0"
+              title="Delete asset">
+              <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Asset</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete <strong>{asset.name}</strong>? This action
+                cannot be undone and will remove this asset from your portfolio.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-500 focus:ring-red-500">
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </header>
 
       {/* Price and Update Section */}

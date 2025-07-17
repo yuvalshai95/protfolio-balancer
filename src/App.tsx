@@ -138,7 +138,9 @@ function App() {
     setAssets(prev => [...prev, asset]);
   };
 
-  const handleRemoveAsset = (symbol: string) => {
+  const handleRemoveAsset = async (symbol: string) => {
+    // Simulate API call delay for loading state demonstration
+    await new Promise(resolve => setTimeout(resolve, 1000));
     setAssets(prev => prev.filter(asset => asset.symbol !== symbol));
   };
 
@@ -286,6 +288,13 @@ function App() {
     });
 
     setManualAllocationResults(results);
+  };
+
+  // Handle asset renaming
+  const handleAssetRename = (symbol: string, newName: string) => {
+    setAssets(prev =>
+      prev.map(asset => (asset.symbol === symbol ? { ...asset, name: newName } : asset))
+    );
   };
 
   // Handle auto/manual calculation mode change
@@ -494,6 +503,8 @@ function App() {
                         onUpdateCurrentValue={handleUpdateCurrentValue}
                         onRemoveAsset={handleRemoveAsset}
                         onRefreshSingle={handleRefreshSingle}
+                        onAssetRename={handleAssetRename}
+                        assets={assets}
                       />
                     ))}
                   </div>
