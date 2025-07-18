@@ -89,7 +89,7 @@ function App() {
     exchange?: string;
   } | null>(null);
 
-  const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+  const useMockData = import.meta.env.VITE_USE_MOCK_DATA;
 
   // Fetch user name for welcome message
   useEffect(() => {
