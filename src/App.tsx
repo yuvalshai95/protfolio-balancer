@@ -13,6 +13,7 @@ import { AssetCard } from './components/AssetCard';
 import { PortfolioSummary } from './components/PortfolioSummary';
 import { AllocationResults } from './components/AllocationResults';
 import { ManualInvestmentCalculator } from './components/ManualInvestmentCalculator';
+import { FullScreenDialog } from './components/FullScreenDialog';
 import { Loader } from './components/Loader';
 import { Asset } from './types';
 import { calculateOptimalAllocation, validatePortfolio } from './utils/calculations';
@@ -46,6 +47,11 @@ function App() {
     ReturnType<typeof calculateOptimalAllocation>
   >([]);
   const [showManualCalculator, setShowManualCalculator] = useState(false);
+
+  // Full-screen state
+  const [fullScreenPanel, setFullScreenPanel] = useState<'allocation' | 'manual' | null>(
+    null
+  );
 
   const [showRefreshApiUsage, setShowRefreshApiUsage] = useState(false);
   const [refreshApiUsage, setRefreshApiUsage] = useState<{
@@ -307,6 +313,15 @@ function App() {
     }
   };
 
+  // Handle full-screen panel changes
+  const handleOpenFullScreen = (panel: 'allocation' | 'manual') => {
+    setFullScreenPanel(panel);
+  };
+
+  const handleCloseFullScreen = () => {
+    setFullScreenPanel(null);
+  };
+
   // Get the current results based on mode
   const currentAllocationResults = isAutoCalculate
     ? allocationResults
@@ -530,6 +545,7 @@ function App() {
                 <AllocationResults
                   results={currentAllocationResults}
                   totalAdditionalInvestment={additionalInvestment}
+                  onFullScreenClick={() => handleOpenFullScreen('allocation')}
                 />
               )}
 
@@ -538,6 +554,7 @@ function App() {
                   assets={assets}
                   totalAdditionalInvestment={additionalInvestment}
                   onConfirmInvestment={handleConfirmManualInvestment}
+                  onFullScreenClick={() => handleOpenFullScreen('manual')}
                 />
               )}
 
@@ -561,6 +578,39 @@ function App() {
 
       {/* Footer */}
       <Footer />
+
+      {/* Full-Screen Modal */}
+      {fullScreenPanel && hasAssets && (
+        <FullScreenDialog
+          open={fullScreenPanel !== null}
+          onOpenChange={open => !open && handleCloseFullScreen()}
+          title={
+            fullScreenPanel === 'allocation'
+              ? 'Investment Recommendations'
+              : 'Manual Investment Calculator'
+          }>
+          <div className="h-full w-full max-w-none">
+            {fullScreenPanel === 'allocation' && shouldShowResults && (
+              <AllocationResults
+                results={currentAllocationResults}
+                totalAdditionalInvestment={additionalInvestment}
+                onFullScreenClick={() => handleOpenFullScreen('allocation')}
+                isFullScreen={true}
+              />
+            )}
+
+            {fullScreenPanel === 'manual' && shouldShowManualCalc && (
+              <ManualInvestmentCalculator
+                assets={assets}
+                totalAdditionalInvestment={additionalInvestment}
+                onConfirmInvestment={handleConfirmManualInvestment}
+                onFullScreenClick={() => handleOpenFullScreen('manual')}
+                isFullScreen={true}
+              />
+            )}
+          </div>
+        </FullScreenDialog>
+      )}
     </div>
   );
 }
