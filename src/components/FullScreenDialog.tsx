@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 
 interface FullScreenDialogProps {
@@ -14,6 +14,25 @@ export const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
   title,
   children,
 }) => {
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Handle opening animation
+  useEffect(() => {
+    if (open) {
+      setShouldRender(true);
+      // Small delay to ensure element is mounted before animating
+      const timer = setTimeout(() => setIsVisible(true), 10);
+      return () => clearTimeout(timer);
+    } else if (shouldRender) {
+      // Start closing animation
+      setIsVisible(false);
+      // Wait for animation to complete before unmounting
+      const timer = setTimeout(() => setShouldRender(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [open, shouldRender]);
+
   // Lock body scroll when dialog is open
   useEffect(() => {
     if (open) {
@@ -39,14 +58,14 @@ export const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [open, onOpenChange]);
 
-  if (!open) return null;
+  if (!shouldRender) return null;
 
   return (
     <>
       {/* Backdrop */}
       <div
         className={`fixed inset-0 bg-black/60 z-40 transition-opacity duration-200 ease-out ${
-          open ? 'opacity-100' : 'opacity-0'
+          isVisible ? 'opacity-100' : 'opacity-0'
         }`}
         onClick={() => onOpenChange(false)}
         aria-hidden="true"
@@ -56,7 +75,7 @@ export const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
       <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
         <div
           className={`w-[95vw] max-w-[1800px] h-[95vh] bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl shadow-2xl transition-all duration-300 ease-out ${
-            open ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+            isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
           }`}
           role="dialog"
           aria-modal="true"
