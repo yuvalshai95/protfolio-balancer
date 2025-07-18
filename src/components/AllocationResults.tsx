@@ -8,11 +8,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/component-library/card';
-import {
-  Alert,
-  AlertTitle,
-  AlertDescription,
-} from '@/components/component-library/alert';
+
 import { Button } from '@/components/component-library/button';
 import { formatNumber } from '@/utils/formatting';
 
@@ -81,6 +77,60 @@ export const AllocationResults: React.FC<AllocationResultsProps> = ({
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
+        {/* Sticky Investment Summary */}
+        <div
+          className="sticky top-0 z-10 px-6 py-4 backdrop-blur-sm border-b transition-all duration-150 bg-white/95 border-gray-200 dark:bg-gray-900/95 dark:border-gray-700"
+          role="region"
+          aria-label="Investment Summary"
+          aria-live="polite">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600 dark:text-gray-300 font-medium">
+                Additional Investment:
+              </span>
+              <span className="font-bold text-blue-600 dark:text-blue-400">
+                ₪{formatNumber(totalAdditionalInvestment)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600 dark:text-gray-300 font-medium">
+                Total Allocated:
+              </span>
+              <span className="font-bold text-green-600 dark:text-green-400">
+                ₪{formatNumber(totalAllocated)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600 dark:text-gray-300 font-medium">
+                Remaining:
+              </span>
+              <span
+                className={`font-bold transition-colors duration-150 ${
+                  remainder > 0.01
+                    ? 'text-orange-600 dark:text-orange-400'
+                    : 'text-gray-900 dark:text-gray-100'
+                }`}>
+                ₪{formatNumber(remainder)}
+              </span>
+            </div>
+            {remainder > 0.01 && (
+              <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <TrendingUp className="h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div className="text-xs text-blue-800 dark:text-blue-200">
+                    <span className="font-bold">NOTE: </span>
+                    <span>
+                      ₪{formatNumber(remainder)} remains unallocated. This is because no
+                      single available share purchase could further improve the portfolio
+                      balance.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Scrollable Results List */}
         <div className="flex-1 overflow-y-auto px-6">
           <div
@@ -276,49 +326,6 @@ export const AllocationResults: React.FC<AllocationResultsProps> = ({
               </Card>
             ))}
           </div>
-        </div>
-
-        {/* Footer Summary and Alerts with spacing */}
-        <div className="flex-shrink-0 p-6 pt-8 space-y-4 border-t border-gray-200 dark:border-gray-700 mt-4">
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-600 dark:text-gray-300 font-medium">
-                Total Allocated:
-              </span>
-              <span className="font-semibold text-gray-900 dark:text-gray-100">
-                ₪{formatNumber(totalAllocated)}
-              </span>
-            </div>
-            {remainder > 0.01 && (
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-600 dark:text-gray-300 font-medium">
-                  Remaining:
-                </span>
-                <span className="font-semibold text-orange-600 dark:text-orange-400">
-                  ₪{formatNumber(remainder)}
-                </span>
-              </div>
-            )}
-            <div className="flex justify-between items-center text-lg font-bold border-t border-gray-200 dark:border-gray-600 pt-2">
-              <span className="text-gray-900 dark:text-gray-100">
-                Additional Investment:
-              </span>
-              <span className="text-blue-600 dark:text-blue-400">
-                ₪{formatNumber(totalAdditionalInvestment)}
-              </span>
-            </div>
-          </div>
-
-          {remainder > 0.01 && (
-            <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-              <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <AlertTitle className="text-blue-800 dark:text-blue-200">Note</AlertTitle>
-              <AlertDescription className="text-blue-700 dark:text-blue-300">
-                ₪{formatNumber(remainder)} remains unallocated. This is because no single
-                available share purchase could further improve the portfolio balance.
-              </AlertDescription>
-            </Alert>
-          )}
         </div>
       </CardContent>
     </Card>
