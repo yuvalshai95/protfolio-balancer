@@ -203,25 +203,25 @@ export const ManualInvestmentCalculator: React.FC<ManualInvestmentCalculatorProp
       <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
         {/* Sticky Budget Summary */}
         <div
-          className={`sticky top-0 z-10 px-6 py-4 backdrop-blur-sm border-b transition-all duration-150 ${
+          className={`sticky top-0 z-10 px-6 py-4 backdrop-blur-sm border-b transition-all duration-150 shadow-sm ${
             validation.exceedsBudget
-              ? 'bg-red-50/95 border-red-200 dark:bg-red-900/20 dark:border-red-800'
-              : 'bg-white/95 border-gray-200 dark:bg-gray-900/95 dark:border-gray-700'
+              ? 'bg-gradient-to-r from-red-50/95 to-rose-50/95 border-red-200 dark:from-red-900/30 dark:to-rose-900/30 dark:border-red-800'
+              : 'bg-gradient-to-r from-slate-50/95 to-gray-50/95 border-gray-200 dark:from-slate-900/30 dark:to-gray-900/30 dark:border-gray-700'
           }`}
           role="region"
           aria-label="Budget Summary"
           aria-live="polite">
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-300 font-medium">
+            <div className="flex items-center justify-start gap-6 text-sm">
+              <span className="text-gray-600 dark:text-gray-300 font-medium w-40">
                 Available Cash:
               </span>
               <span className="font-bold text-blue-600 dark:text-blue-400">
                 ₪{formatNumber(totalAdditionalInvestment)}
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-300 font-medium">
+            <div className="flex items-center justify-start gap-6 text-sm">
+              <span className="text-gray-600 dark:text-gray-300 font-medium w-40">
                 Total Allocated:
               </span>
               <span
@@ -233,8 +233,8 @@ export const ManualInvestmentCalculator: React.FC<ManualInvestmentCalculatorProp
                 ₪{formatNumber(liveResults.totalSpent)}
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-300 font-medium">
+            <div className="flex items-center justify-start gap-6 text-sm">
+              <span className="text-gray-600 dark:text-gray-300 font-medium w-40">
                 Remaining:
               </span>
               <span

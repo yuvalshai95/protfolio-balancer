@@ -79,29 +79,29 @@ export const AllocationResults: React.FC<AllocationResultsProps> = ({
       <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
         {/* Sticky Investment Summary */}
         <div
-          className="sticky top-0 z-10 px-6 py-4 backdrop-blur-sm border-b transition-all duration-150 bg-white/95 border-gray-200 dark:bg-gray-900/95 dark:border-gray-700"
+          className="sticky top-0 z-10 px-6 py-4 backdrop-blur-sm border-b transition-all duration-150 bg-gradient-to-r from-slate-50/95 to-gray-50/95 border-gray-200 dark:from-slate-900/30 dark:to-gray-900/30 dark:border-gray-700 shadow-sm"
           role="region"
           aria-label="Investment Summary"
           aria-live="polite">
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-300 font-medium">
+            <div className="flex items-center justify-start gap-6 text-sm">
+              <span className="text-gray-600 dark:text-gray-300 font-medium w-40">
                 Additional Investment:
               </span>
               <span className="font-bold text-blue-600 dark:text-blue-400">
                 ₪{formatNumber(totalAdditionalInvestment)}
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-300 font-medium">
+            <div className="flex items-center justify-start gap-6 text-sm">
+              <span className="text-gray-600 dark:text-gray-300 font-medium w-40">
                 Total Allocated:
               </span>
               <span className="font-bold text-green-600 dark:text-green-400">
                 ₪{formatNumber(totalAllocated)}
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-300 font-medium">
+            <div className="flex items-center justify-start gap-6 text-sm">
+              <span className="text-gray-600 dark:text-gray-300 font-medium w-40">
                 Remaining:
               </span>
               <span

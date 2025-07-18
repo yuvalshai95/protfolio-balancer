@@ -62,21 +62,26 @@ export const FullScreenDialog: React.FC<FullScreenDialogProps> = ({
           aria-modal="true"
           aria-labelledby="fullscreen-dialog-title"
           onClick={e => e.stopPropagation()}>
-          {/* Hidden title for accessibility */}
-          <h1 id="fullscreen-dialog-title" className="sr-only">
-            {title}
-          </h1>
+          {/* Dialog Content with Header */}
+          <div className="h-full w-full overflow-hidden flex flex-col">
+            {/* Minimal Header with Close Button */}
+            <div className="flex justify-end px-4 py-2 bg-white/20 backdrop-blur-sm rounded-t-2xl">
+              {/* Hidden title for accessibility */}
+              <h1 id="fullscreen-dialog-title" className="sr-only">
+                {title}
+              </h1>
+              <button
+                onClick={() => onOpenChange(false)}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-white/60 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                aria-label="Close dialog">
+                <X className="h-5 w-5" />
+                <span className="text-sm font-medium hidden sm:block">Close</span>
+              </button>
+            </div>
 
-          {/* Close Button */}
-          <button
-            onClick={() => onOpenChange(false)}
-            className="absolute right-6 top-6 rounded-lg p-2.5 bg-white/95 backdrop-blur-sm shadow-lg border border-gray-200 opacity-90 ring-offset-background transition-all duration-200 hover:opacity-100 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 z-10"
-            aria-label="Close dialog">
-            <X className="h-5 w-5 text-gray-700" />
-          </button>
-
-          {/* Content Area */}
-          <div className="h-full w-full p-6 overflow-hidden">{children}</div>
+            {/* Content Area */}
+            <div className="flex-1 overflow-hidden px-4 pt-2 pb-4">{children}</div>
+          </div>
         </div>
       </div>
     </>
