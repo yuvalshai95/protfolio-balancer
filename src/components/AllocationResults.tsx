@@ -101,66 +101,66 @@ export const AllocationResults: React.FC<AllocationResultsProps> = ({
                 <CardContent className={`${isFullScreen ? 'p-6' : 'p-3 sm:p-4'}`}>
                   {isFullScreen ? (
                     /* Full Screen Card Layout */
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {/* Header */}
                       <div className="flex items-center gap-3">
                         <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                           <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                             {result.symbol}
                           </h3>
-                          <p className="text-lg text-gray-600 dark:text-gray-300">
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
                             {result.name}
                           </p>
                         </div>
                       </div>
 
                       {/* Investment Amount - Highlighted */}
-                      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center">
-                        <div className="text-sm font-medium text-green-800 dark:text-green-200 mb-1">
+                      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center">
+                        <div className="text-xs font-medium text-green-800 dark:text-green-200 mb-1">
                           Recommended Investment
                         </div>
-                        <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                        <div className="text-xl font-bold text-green-600 dark:text-green-400">
                           ₪{formatNumber(result.investmentAmount)}
                         </div>
-                        <div className="text-lg text-gray-600 dark:text-gray-300 mt-1">
+                        <div className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                           {result.shares} shares
                         </div>
                       </div>
 
                       {/* Details Grid */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
-                          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
+                          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
                             Current Value
                           </div>
-                          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                          <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                             ₪{formatNumber(result.currentValue)}
                           </div>
                         </div>
-                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
-                          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
+                          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
                             New Value
                           </div>
-                          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                          <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                             ₪{formatNumber(result.newValue)}
                           </div>
                         </div>
-                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-                          <div className="text-sm text-blue-600 dark:text-blue-400 mb-1">
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2">
+                          <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">
                             Target %
                           </div>
-                          <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                          <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                             {result.targetAllocation.toFixed(2)}%
                           </div>
                         </div>
-                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-                          <div className="text-sm text-blue-600 dark:text-blue-400 mb-1">
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2">
+                          <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">
                             New %
                           </div>
-                          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                          <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                             {result.newPortfolioPercentage.toFixed(2)}%
                           </div>
                         </div>
@@ -168,11 +168,11 @@ export const AllocationResults: React.FC<AllocationResultsProps> = ({
 
                       {/* Difference Badge */}
                       <div className="text-center">
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
                           Difference from Target
                         </div>
                         <div
-                          className={`inline-flex items-center px-4 py-2 rounded-full text-lg font-semibold ${
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
                             result.newDifferenceFromTarget < 0
                               ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
                               : 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
